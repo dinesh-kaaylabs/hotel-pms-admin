@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Filter, Loader2 } from 'lucide-react';
+import { X, Filter } from 'lucide-react';
 import { RoomType } from '../rooms.types';
 
 interface Props {
@@ -30,23 +30,16 @@ export const AdvancedFiltersDrawer: React.FC<Props> = ({ isOpen, onClose, roomTy
     status: '',
     minAvailability: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleApply = async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      onApply({
-        startDate: localFilters.startDate,
-        endDate: localFilters.endDate,
-        roomTypeId: localFilters.roomTypeId || undefined,
-        status: localFilters.status || undefined,
-        minAvailability: localFilters.minAvailability ? Number(localFilters.minAvailability) : undefined,
-      });
-      onClose();
-    } finally {
-      setIsLoading(false);
-    }
+  const handleApply = () => {
+    onApply({
+      startDate: localFilters.startDate,
+      endDate: localFilters.endDate,
+      roomTypeId: localFilters.roomTypeId || undefined,
+      status: localFilters.status || undefined,
+      minAvailability: localFilters.minAvailability ? Number(localFilters.minAvailability) : undefined,
+    });
+    onClose();
   };
 
   const handleReset = () => {
@@ -169,10 +162,9 @@ export const AdvancedFiltersDrawer: React.FC<Props> = ({ isOpen, onClose, roomTy
               <button
                 type="button"
                 onClick={handleApply}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Apply Filters'}
+                Apply Filters
               </button>
             </div>
           </motion.div>

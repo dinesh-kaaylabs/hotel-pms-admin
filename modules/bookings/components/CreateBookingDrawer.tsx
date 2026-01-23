@@ -72,7 +72,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     }
 
     try {
-      const booking = await createBookingMutation.mutateAsync({
+      await createBookingMutation.mutateAsync({
         guestId,
         roomTypeId,
         checkInDate,
@@ -81,7 +81,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       });
       success('Booking created successfully');
       onClose();
-      navigate(`/bookings/${booking.id}`);
+      navigate('/bookings');
     } catch (e: any) {
       error(e?.message || 'Failed to create booking');
     }

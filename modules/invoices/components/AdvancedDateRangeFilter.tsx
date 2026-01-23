@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Loader2 } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { InvoiceFilters } from '../invoices.types';
 
 interface Props {
@@ -13,17 +13,10 @@ interface Props {
 
 export const AdvancedDateRangeFilter: React.FC<Props> = ({ isOpen, onClose, filters, onApply }) => {
   const [localFilters, setLocalFilters] = useState<InvoiceFilters>(filters);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleApply = async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      onApply(localFilters);
-      onClose();
-    } finally {
-      setIsLoading(false);
-    }
+  const handleApply = () => {
+    onApply(localFilters);
+    onClose();
   };
 
   const handleReset = () => {
@@ -113,10 +106,9 @@ export const AdvancedDateRangeFilter: React.FC<Props> = ({ isOpen, onClose, filt
               <button
                 type="button"
                 onClick={handleApply}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Apply Filters'}
+                Apply Filters
               </button>
             </div>
           </motion.div>
