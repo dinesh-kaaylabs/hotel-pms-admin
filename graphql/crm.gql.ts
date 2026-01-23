@@ -38,3 +38,20 @@ export const ADD_GUEST_NOTE_MUTATION = `
     }
   }
 `;
+
+export const CREATE_GUEST_MUTATION = `
+  mutation CreateGuest($input: CreateGuestInput!) {
+    createGuest(input: $input) {
+      id name phone email
+    }
+  }
+`;
+
+export const EXPORT_GUESTS_QUERY = `
+  query ExportGuests($filters: GuestFilters) {
+    exportGuests(filters: $filters) {
+      downloadUrl
+      filename
+    }
+  }
+`;

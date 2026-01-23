@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
 import { Calendar, Filter, Zap, LayoutGrid } from 'lucide-react';
-import { useRoomInventory, useRoomTypes } from '../rooms.api';
+import { useRoomInventory, useRoomTypes, useRoomInventoryAdvanced } from '../rooms.api';
 import { InventoryTable } from '../components/InventoryTable';
 import { BulkEditDrawer } from '../components/BulkEditDrawer';
-import { useToast } from '../../../components/ui/Toast';
+import { AdvancedFiltersDrawer } from '../components/AdvancedFiltersDrawer';
 
 export const RoomsInventoryPage: React.FC = () => {
-  const { success } = useToast();
   const today = new Date().toISOString().split('T')[0];
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -17,14 +16,43 @@ export const RoomsInventoryPage: React.FC = () => {
     roomTypeId: ''
   });
 
+  const [advancedFilters, setAdvancedFilters] = useState<{
+    startDate: string;
+    endDate: string;
+    roomTypeId?: string;
+    status?: string;
+    minAvailability?: number;
+  } | null>(null);
+
   const [isBulkOpen, setBulkOpen] = useState(false);
+  const [isAdvancedOpen, setAdvancedOpen] = useState(false);
 
   const { data: inventory, isLoading } = useRoomInventory(filters);
+  const { data: advancedInventory } = useRoomInventoryAdvanced(advancedFilters || {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+  });
   const { data: roomTypes } = useRoomTypes();
 
+  const displayInventory = advancedFilters ? advancedInventory : inventory;
+
   const handleAdvancedFilters = () => {
-    // TODO: Implement advanced filters modal/drawer
-    success('Advanced filters coming soon.');
+    setAdvancedOpen(true);
+  };
+
+  const handleApplyAdvancedFilters = (newFilters: {
+    startDate: string;
+    endDate: string;
+    roomTypeId?: string;
+    status?: string;
+    minAvailability?: number;
+  }) => {
+    setAdvancedFilters(newFilters);
+    setFilters({
+      startDate: newFilters.startDate,
+      endDate: newFilters.endDate,
+      roomTypeId: newFilters.roomTypeId || '',
+    });
   };
 
   return (
@@ -84,12 +112,25 @@ export const RoomsInventoryPage: React.FC = () => {
         </button>
       </div>
 
-      <InventoryTable data={inventory || []} isLoading={isLoading} />
+      <InventoryTable data={displayInventory || []} isLoading={isLoading} />
 
       <BulkEditDrawer 
         roomTypes={roomTypes || []} 
         isOpen={isBulkOpen} 
         onClose={() => setBulkOpen(false)} 
+      />
+
+      <AdvancedFiltersDrawer
+        isOpen={isAdvancedOpen}
+        onClose={() => {
+          setAdvancedOpen(false);
+          if (!advancedFilters) {
+            setAdvancedFilters(null);
+          }
+        }}
+        roomTypes={roomTypes || []}
+        filters={filters}
+        onApply={handleApplyAdvancedFilters}
       />
     </div>
   );

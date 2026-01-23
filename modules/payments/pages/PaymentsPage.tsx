@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { CreditCard, Download, Printer, Wallet } from 'lucide-react';
-import { usePayments } from '../payments.api';
+import { CreditCard, Download, Printer, Wallet, Loader2 } from 'lucide-react';
+import { usePayments, useExportPayments } from '../payments.api';
 import { PaymentsTable } from '../components/PaymentsTable';
 import { PaymentFilters } from '../components/PaymentFilters';
 import { PaymentDetailsDrawer } from '../components/PaymentDetailsDrawer';
@@ -12,21 +12,31 @@ import { EmptyState } from '../../../components/ui/EmptyState';
 import { useToast } from '../../../components/ui/Toast';
 
 export const PaymentsPage: React.FC = () => {
-  const { success } = useToast();
+  const { success, error } = useToast();
   const [filters, setFilters] = useState<IFilters>({});
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   const { data, isLoading } = usePayments(filters);
   const hasData = data && data.length > 0;
+  const exportMutation = useExportPayments();
 
   const handlePrint = () => {
-    // TODO: Implement print functionality
     window.print();
   };
 
-  const handleExportCSV = () => {
-    // TODO: Implement CSV export functionality
-    success('CSV export functionality coming soon.');
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportMutation.mutateAsync(filters);
+      const link = document.createElement('a');
+      link.href = result.downloadUrl;
+      link.download = result.filename || `payments-${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      success('Payments exported successfully');
+    } catch (e: any) {
+      error(e?.message || 'Failed to export payments');
+    }
   };
 
   return (
@@ -48,9 +58,18 @@ export const PaymentsPage: React.FC = () => {
             </button>
             <button 
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all"
+              disabled={exportMutation.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all disabled:opacity-50"
             >
-              <Download size={18} /> Export CSV
+              {exportMutation.isPending ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} /> Exporting...
+                </>
+              ) : (
+                <>
+                  <Download size={18} /> Export CSV
+                </>
+              )}
             </button>
           </div>
         </div>

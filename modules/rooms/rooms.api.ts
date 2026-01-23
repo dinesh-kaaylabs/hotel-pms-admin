@@ -65,3 +65,26 @@ export const useBulkUpdateInventory = () => {
     },
   });
 };
+
+export const useRoomInventoryAdvanced = (filters: {
+  startDate: string;
+  endDate: string;
+  roomTypeId?: string;
+  status?: string;
+  minAvailability?: number;
+}) => {
+  return useQuery<RoomInventory[]>({
+    queryKey: ['room-inventory-advanced', filters],
+    queryFn: async () => {
+      const data = await graphqlRequest<{ roomInventoryAdvanced: RoomInventory[] }>(`
+        query RoomInventoryAdvancedFilters($filters: RoomInventoryFilters!) {
+          roomInventoryAdvanced(filters: $filters) {
+            id roomTypeId date totalRooms availableRooms status
+          }
+        }
+      `, { filters });
+      return data.roomInventoryAdvanced;
+    },
+    enabled: !!filters.startDate && !!filters.endDate,
+  });
+};

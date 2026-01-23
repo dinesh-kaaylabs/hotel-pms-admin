@@ -30,3 +30,18 @@ export const useInvoiceDetails = (id: string | null) => {
     enabled: !!id,
   });
 };
+
+export const useExportInvoices = () => {
+  return useMutation({
+    mutationFn: async (filters?: InvoiceFilters) => {
+      const data = await graphqlRequest<{ exportInvoices: { downloadUrl: string; filename: string } }>(`
+        query ExportInvoices($filters: InvoiceFilters) {
+          exportInvoices(filters: $filters) {
+            downloadUrl filename
+          }
+        }
+      `, { filters });
+      return data.exportInvoices;
+    },
+  });
+};

@@ -6,6 +6,7 @@ import { useBookings } from './bookings.api';
 import { BookingsTable } from './components/BookingsTable';
 import { BookingPagination } from './components/BookingPagination';
 import { BookingDetailsDrawer } from './components/BookingDetailsDrawer';
+import { CreateBookingDrawer } from './components/CreateBookingDrawer';
 import { BookingFilters } from './components/BookingFilters';
 import { BookingStatus } from './bookings.types';
 import { PageTransition } from '../../app/layout/PageTransition';
@@ -13,17 +14,16 @@ import { TableSkeleton } from '../../components/ui/TableSkeleton';
 import { FilterSkeleton } from '../../components/ui/FilterSkeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthContext';
-import { useToast } from '../../components/ui/Toast';
 
 export const BookingsPage: React.FC = () => {
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
-  const { success } = useToast();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('ALL');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [isCreateOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading, isPlaceholderData } = useBookings({
     page,
@@ -49,9 +49,7 @@ export const BookingsPage: React.FC = () => {
   };
 
   const handleCreateBooking = () => {
-    // TODO: Replace with booking creation drawer/modal when implemented
-    success('Booking creation flow coming soon. For now, bookings can be created through the check-in process.');
-    // Future: navigate('/bookings/new') or open booking creation drawer
+    setCreateOpen(true);
   };
 
   return (
@@ -131,6 +129,11 @@ export const BookingsPage: React.FC = () => {
         <BookingDetailsDrawer 
           booking={selectedBooking} 
           onClose={() => setSelectedBooking(null)} 
+        />
+
+        <CreateBookingDrawer
+          isOpen={isCreateOpen}
+          onClose={() => setCreateOpen(false)}
         />
       </div>
     </PageTransition>

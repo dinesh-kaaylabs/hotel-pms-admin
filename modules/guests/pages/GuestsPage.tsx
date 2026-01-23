@@ -1,26 +1,38 @@
 
 import React, { useState } from 'react';
-import { useGuests } from '../guests.api';
+import { useGuests, useExportGuests } from '../guests.api';
 import { GuestsTable } from '../components/GuestsTable';
-import { Search, Users, Download, Filter } from 'lucide-react';
+import { AdvancedSegmentsFilter } from '../components/AdvancedSegmentsFilter';
+import { Search, Users, Download, Filter, Loader2 } from 'lucide-react';
 import { PageTransition } from '../../../app/layout/PageTransition';
 import { TableSkeleton } from '../../../components/ui/TableSkeleton';
 import { GuestFilters, GuestTag } from '../guests.types';
 import { useToast } from '../../../components/ui/Toast';
 
 export const GuestsPage: React.FC = () => {
-  const { success } = useToast();
+  const { success, error } = useToast();
   const [filters, setFilters] = useState<GuestFilters>({});
+  const [isFilterOpen, setFilterOpen] = useState(false);
   const { data, isLoading } = useGuests(filters);
+  const exportMutation = useExportGuests();
 
-  const handleExport = () => {
-    // TODO: Implement CSV export functionality
-    success('Export functionality coming soon. Guest directory export will be available shortly.');
+  const handleExport = async () => {
+    try {
+      const result = await exportMutation.mutateAsync(filters);
+      const link = document.createElement('a');
+      link.href = result.downloadUrl;
+      link.download = result.filename || `guests-${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      success('Guest directory exported successfully');
+    } catch (e: any) {
+      error(e?.message || 'Failed to export guests');
+    }
   };
 
   const handleAdvancedSegments = () => {
-    // TODO: Implement advanced segments modal/drawer
-    success('Advanced segments feature coming soon.');
+    setFilterOpen(true);
   };
 
   return (
@@ -35,9 +47,18 @@ export const GuestsPage: React.FC = () => {
           </div>
           <button 
             onClick={handleExport}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg"
+            disabled={exportMutation.isPending}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg disabled:opacity-50"
           >
-            <Download size={18} /> Export Directory
+            {exportMutation.isPending ? (
+              <>
+                <Loader2 className="animate-spin" size={18} /> Exporting...
+              </>
+            ) : (
+              <>
+                <Download size={18} /> Export Directory
+              </>
+            )}
           </button>
         </div>
 
@@ -78,6 +99,13 @@ export const GuestsPage: React.FC = () => {
         ) : (
           <GuestsTable data={data || []} />
         )}
+
+        <AdvancedSegmentsFilter
+          isOpen={isFilterOpen}
+          onClose={() => setFilterOpen(false)}
+          filters={filters}
+          onApply={setFilters}
+        />
       </div>
     </PageTransition>
   );

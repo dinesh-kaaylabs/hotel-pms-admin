@@ -30,3 +30,21 @@ export const SETTLEMENT_SUMMARY_QUERY = `
     }
   }
 `;
+
+export const EXPORT_PAYMENTS_QUERY = `
+  query ExportPayments($filters: PaymentFilters) {
+    exportPayments(filters: $filters) {
+      downloadUrl
+      filename
+    }
+  }
+`;
+
+export const EXPORT_INVOICES_QUERY = `
+  query ExportInvoices($filters: InvoiceFilters) {
+    exportInvoices(filters: $filters) {
+      downloadUrl
+      filename
+    }
+  }
+`;

@@ -63,3 +63,37 @@ export const useAddGuestNote = (guestId: string | undefined) => {
     },
   });
 };
+
+export const useCreateGuest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; phone: string; email?: string }) => {
+      const data = await graphqlRequest<{ createGuest: Guest }>(`
+        mutation CreateGuest($input: CreateGuestInput!) {
+          createGuest(input: $input) {
+            id name phone email
+          }
+        }
+      `, { input });
+      return data.createGuest;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+    },
+  });
+};
+
+export const useExportGuests = () => {
+  return useMutation({
+    mutationFn: async (filters?: GuestFilters) => {
+      const data = await graphqlRequest<{ exportGuests: { downloadUrl: string; filename: string } }>(`
+        query ExportGuests($filters: GuestFilters) {
+          exportGuests(filters: $filters) {
+            downloadUrl filename
+          }
+        }
+      `, { filters });
+      return data.exportGuests;
+    },
+  });
+};

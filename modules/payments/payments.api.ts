@@ -29,3 +29,18 @@ export const usePaymentDetails = (id: string | null) => {
     enabled: !!id,
   });
 };
+
+export const useExportPayments = () => {
+  return useMutation({
+    mutationFn: async (filters?: PaymentFilters) => {
+      const data = await graphqlRequest<{ exportPayments: { downloadUrl: string; filename: string } }>(`
+        query ExportPayments($filters: PaymentFilters) {
+          exportPayments(filters: $filters) {
+            downloadUrl filename
+          }
+        }
+      `, { filters });
+      return data.exportPayments;
+    },
+  });
+};

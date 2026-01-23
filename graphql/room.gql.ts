@@ -51,3 +51,11 @@ export const BULK_UPDATE_INVENTORY_MUTATION = `
     bulkUpdateInventory(input: $input) { success }
   }
 `;
+
+export const ROOM_INVENTORY_ADVANCED_FILTERS_QUERY = `
+  query RoomInventoryAdvancedFilters($filters: RoomInventoryFilters!) {
+    roomInventoryAdvanced(filters: $filters) {
+      id roomTypeId date totalRooms availableRooms status
+    }
+  }
+`;

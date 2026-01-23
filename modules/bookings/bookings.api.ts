@@ -71,3 +71,52 @@ export const useUpdateBookingStatus = () => {
     },
   });
 };
+
+export const useCreateBooking = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      guestId: string;
+      roomTypeId: string;
+      checkInDate: string;
+      checkOutDate: string;
+      specialRequests?: string;
+    }) => {
+      const data = await graphqlRequest<{ createBooking: Booking }>(`
+        mutation CreateBooking($input: CreateBookingInput!) {
+          createBooking(input: $input) {
+            id bookingNumber status totalAmount
+          }
+        }
+      `, { input });
+      return data.createBooking;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    },
+  });
+};
+
+export const useBookingPricing = (roomTypeId: string | null, checkInDate: string, checkOutDate: string) => {
+  return useQuery({
+    queryKey: ['booking-pricing', roomTypeId, checkInDate, checkOutDate],
+    queryFn: async () => {
+      const data = await graphqlRequest<{ bookingPricing: {
+        baseAmount: number;
+        taxAmount: number;
+        totalAmount: number;
+        currency: string;
+        breakdown: Array<{ date: string; rate: number; nights: number }>;
+      } }>(`
+        query GetBookingPricing($roomTypeId: ID!, $checkInDate: String!, $checkOutDate: String!) {
+          bookingPricing(roomTypeId: $roomTypeId, checkInDate: $checkInDate, checkOutDate: $checkOutDate) {
+            baseAmount taxAmount totalAmount currency
+            breakdown { date rate nights }
+          }
+        }
+      `, { roomTypeId, checkInDate, checkOutDate });
+      return data.bookingPricing;
+    },
+    enabled: !!roomTypeId && !!checkInDate && !!checkOutDate,
+  });
+};
