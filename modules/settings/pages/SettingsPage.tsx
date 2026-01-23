@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Settings, Building, Users } from 'lucide-react';
+import { Settings, Building, Users, Mail, FileText, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 
 export const SettingsPage: React.FC = () => {
@@ -39,6 +39,45 @@ export const SettingsPage: React.FC = () => {
             >
               <Users size={18} /> Team Members
             </NavLink>
+          )}
+
+          {/* Phase-2 Wave-1 Routes */}
+          {hasPermission('settings:view') && (
+            <>
+              <div className="pt-4 mt-4 border-t border-slate-200">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-2">Phase-2 Features</p>
+              </div>
+              
+              <NavLink
+                to="/settings/phase2/communication"
+                className={({ isActive }) => `
+                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                  ${isActive ? 'bg-white border border-slate-200 text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100'}
+                `}
+              >
+                <Mail size={18} /> Communication
+              </NavLink>
+              
+              <NavLink
+                to="/settings/phase2/audit"
+                className={({ isActive }) => `
+                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                  ${isActive ? 'bg-white border border-slate-200 text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100'}
+                `}
+              >
+                <FileText size={18} /> Audit Logs
+              </NavLink>
+              
+              <NavLink
+                to="/settings/phase2/approval"
+                className={({ isActive }) => `
+                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                  ${isActive ? 'bg-white border border-slate-200 text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100'}
+                `}
+              >
+                <CheckCircle size={18} /> Approvals
+              </NavLink>
+            </>
           )}
         </aside>
 

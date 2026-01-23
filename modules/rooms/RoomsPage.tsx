@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -13,29 +13,26 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RoomStatus } from '../../types';
+import { useHousekeepingRooms } from '../housekeeping/housekeeping.api';
+import { TableSkeleton } from '../../components/ui/TableSkeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
 
-interface Room {
-  id: string;
-  number: string;
-  type: string;
-  status: RoomStatus;
-  floor: number;
-}
-
-const mockRooms: Room[] = [
-  { id: '1', number: '101', type: 'Single', status: RoomStatus.AVAILABLE, floor: 1 },
-  { id: '2', number: '102', type: 'Single', status: RoomStatus.DIRTY, floor: 1 },
-  { id: '3', number: '103', type: 'Double', status: RoomStatus.OCCUPIED, floor: 1 },
-  { id: '4', number: '104', type: 'Suite', status: RoomStatus.MAINTENANCE, floor: 1 },
-  { id: '5', number: '201', type: 'Double', status: RoomStatus.AVAILABLE, floor: 2 },
-  { id: '6', number: '202', type: 'Double', status: RoomStatus.OCCUPIED, floor: 2 },
-  { id: '7', number: '203', type: 'Deluxe', status: RoomStatus.AVAILABLE, floor: 2 },
-  { id: '8', number: '301', type: 'Penthouse', status: RoomStatus.OCCUPIED, floor: 3 },
-  { id: '9', number: '302', type: 'Penthouse', status: RoomStatus.AVAILABLE, floor: 3 },
-  { id: '10', number: '105', type: 'Double', status: RoomStatus.AVAILABLE, floor: 1 },
-  { id: '11', number: '106', type: 'Double', status: RoomStatus.DIRTY, floor: 1 },
-  { id: '12', number: '205', type: 'Deluxe', status: RoomStatus.MAINTENANCE, floor: 2 },
-];
+// Map HousekeepingStatus to RoomStatus for display
+const mapHousekeepingToRoomStatus = (status: string): RoomStatus => {
+  switch (status) {
+    case 'CLEAN':
+    case 'INSPECTED':
+      return RoomStatus.AVAILABLE;
+    case 'OCCUPIED':
+      return RoomStatus.OCCUPIED;
+    case 'DIRTY':
+      return RoomStatus.DIRTY;
+    case 'OUT_OF_SERVICE':
+      return RoomStatus.MAINTENANCE;
+    default:
+      return RoomStatus.AVAILABLE;
+  }
+};
 
 const statusStyles = {
   [RoomStatus.AVAILABLE]: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2 },
@@ -48,8 +45,22 @@ const statusStyles = {
 export const RoomsPage: React.FC = () => {
   const [filter, setFilter] = useState<RoomStatus | 'ALL'>('ALL');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  
+  const { data: housekeepingRooms, isLoading } = useHousekeepingRooms();
 
-  const filteredRooms = filter === 'ALL' ? mockRooms : mockRooms.filter(r => r.status === filter);
+  // Transform housekeeping rooms to Room format with mapped status
+  const rooms = useMemo(() => {
+    if (!housekeepingRooms) return [];
+    return housekeepingRooms.map(room => ({
+      id: room.id,
+      number: room.roomNumber,
+      type: room.roomType,
+      status: mapHousekeepingToRoomStatus(room.status),
+      floor: room.floor,
+    }));
+  }, [housekeepingRooms]);
+
+  const filteredRooms = filter === 'ALL' ? rooms : rooms.filter(r => r.status === filter);
 
   return (
     <div className="space-y-6">
@@ -97,35 +108,45 @@ export const RoomsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        {filteredRooms.map((room) => {
-          const style = statusStyles[room.status];
-          const StatusIcon = style.icon;
-          return (
-            <motion.div
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              key={room.id}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-md ${style.bg} ${style.border}`}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className={`text-lg font-bold ${style.text}`}>{room.number}</span>
-                <StatusIcon size={20} className={style.text} />
-              </div>
-              <div>
-                <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${style.text}`}>{room.type}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">Floor {room.floor}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${style.bg} filter brightness-90 ${style.text}`}>
-                    {room.status}
-                  </span>
+      {isLoading ? (
+        <TableSkeleton rows={6} cols={6} />
+      ) : filteredRooms.length === 0 ? (
+        <EmptyState
+          icon={CheckCircle2}
+          title="No Rooms Found"
+          description={filter === 'ALL' ? "No rooms available in the system." : `No rooms match the ${filter} filter.`}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {filteredRooms.map((room) => {
+            const style = statusStyles[room.status];
+            const StatusIcon = style.icon;
+            return (
+              <motion.div
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                key={room.id}
+                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-md ${style.bg} ${style.border}`}
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <span className={`text-lg font-bold ${style.text}`}>{room.number}</span>
+                  <StatusIcon size={20} className={style.text} />
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${style.text}`}>{room.type}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">Floor {room.floor}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${style.bg} filter brightness-90 ${style.text}`}>
+                      {room.status}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

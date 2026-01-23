@@ -8,13 +8,20 @@ import { Invoice, InvoiceFilters, InvoiceStatus } from '../invoices.types';
 import { PageTransition } from '../../../app/layout/PageTransition';
 import { TableSkeleton } from '../../../components/ui/TableSkeleton';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { useToast } from '../../../components/ui/Toast';
 
 export const InvoicesPage: React.FC = () => {
+  const { success } = useToast();
   const [filters, setFilters] = useState<InvoiceFilters>({});
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const { data, isLoading } = useInvoices(filters);
   const hasData = data && data.length > 0;
+
+  const handleAdvancedDateRange = () => {
+    // TODO: Implement advanced date range modal/drawer
+    success('Advanced date range filter coming soon.');
+  };
 
   return (
     <PageTransition>
@@ -59,7 +66,10 @@ export const InvoicesPage: React.FC = () => {
             </select>
           </div>
           
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+          <button 
+            onClick={handleAdvancedDateRange}
+            className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
             <Filter size={16} /> Advanced Date Range
           </button>
         </div>

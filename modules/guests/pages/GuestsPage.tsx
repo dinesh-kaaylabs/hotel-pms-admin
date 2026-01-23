@@ -6,10 +6,22 @@ import { Search, Users, Download, Filter } from 'lucide-react';
 import { PageTransition } from '../../../app/layout/PageTransition';
 import { TableSkeleton } from '../../../components/ui/TableSkeleton';
 import { GuestFilters, GuestTag } from '../guests.types';
+import { useToast } from '../../../components/ui/Toast';
 
 export const GuestsPage: React.FC = () => {
+  const { success } = useToast();
   const [filters, setFilters] = useState<GuestFilters>({});
   const { data, isLoading } = useGuests(filters);
+
+  const handleExport = () => {
+    // TODO: Implement CSV export functionality
+    success('Export functionality coming soon. Guest directory export will be available shortly.');
+  };
+
+  const handleAdvancedSegments = () => {
+    // TODO: Implement advanced segments modal/drawer
+    success('Advanced segments feature coming soon.');
+  };
 
   return (
     <PageTransition>
@@ -21,7 +33,10 @@ export const GuestsPage: React.FC = () => {
             </h1>
             <p className="text-slate-500 text-sm mt-1">Manage guest relationships, stay history, and VIP status</p>
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg"
+          >
             <Download size={18} /> Export Directory
           </button>
         </div>
@@ -50,7 +65,10 @@ export const GuestsPage: React.FC = () => {
             </select>
           </div>
           
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+          <button 
+            onClick={handleAdvancedSegments}
+            className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
             <Filter size={16} /> Advanced Segments
           </button>
         </div>

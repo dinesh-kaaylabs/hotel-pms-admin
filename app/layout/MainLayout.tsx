@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CalendarDays, 
@@ -90,14 +90,24 @@ const navItems: NavItem[] = [
 export const MainLayout: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['/rooms', '/pricing']);
+  const [globalSearch, setGlobalSearch] = useState('');
   const { user, logout } = useAuth();
   const { theme } = useBrandTheme();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMenu = (path: string) => {
     setExpandedMenus(prev => 
       prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
     );
+  };
+
+  const handleGlobalSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (globalSearch.trim()) {
+      navigate(`/bookings?search=${encodeURIComponent(globalSearch.trim())}`);
+      setGlobalSearch('');
+    }
   };
 
   const visibleNavItems = navItems.filter(item => {
@@ -247,14 +257,17 @@ export const MainLayout: React.FC = () => {
             {/* Multi-Hotel Context Switcher */}
             <HotelSwitcher />
 
-            <div className="relative group hidden sm:block ml-2">
+            <form onSubmit={handleGlobalSearch} className="relative group hidden sm:block ml-2">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" />
               <input 
                 type="text" 
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGlobalSearch(e)}
                 placeholder="Search everywhere..."
                 className="pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-700 border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-brand-primary/20 transition-all outline-none text-slate-900 dark:text-slate-100 font-medium"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-3">

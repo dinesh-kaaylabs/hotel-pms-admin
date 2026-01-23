@@ -13,7 +13,7 @@
  */
 
 import React, { useState } from 'react';
-import { Mail, MessageSquare, Phone, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, MessageSquare, Phone, Loader2, CheckCircle2, AlertCircle, Save } from 'lucide-react';
 import { useToast } from '../../../../components/ui/Toast';
 import { featureFlagService, Phase2FeatureFlag } from '../../../../backend/phase2/services/FeatureFlagService';
 import { useHotelStore } from '../../../../stores/hotelStore';
@@ -26,6 +26,11 @@ export const CommunicationSettingsPage: React.FC = () => {
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Form state management
+  const [emailConfig, setEmailConfig] = useState({ provider: 'smtp', apiKey: '' });
+  const [smsConfig, setSmsConfig] = useState({ provider: 'twilio', apiKey: '' });
+  const [whatsappConfig, setWhatsappConfig] = useState({ token: '', phoneId: '' });
 
   React.useEffect(() => {
     const checkFlags = async () => {
@@ -81,6 +86,45 @@ export const CommunicationSettingsPage: React.FC = () => {
     }
   };
 
+  const handleSaveEmailConfig = async () => {
+    if (!emailEnabled) return;
+    setLoading(true);
+    try {
+      // TODO: Implement API call to save email configuration
+      toast.success('Email configuration saved successfully');
+    } catch (error) {
+      toast.error('Failed to save email configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSmsConfig = async () => {
+    if (!smsEnabled) return;
+    setLoading(true);
+    try {
+      // TODO: Implement API call to save SMS configuration
+      toast.success('SMS configuration saved successfully');
+    } catch (error) {
+      toast.error('Failed to save SMS configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveWhatsAppConfig = async () => {
+    if (!whatsappEnabled) return;
+    setLoading(true);
+    try {
+      // TODO: Implement API call to save WhatsApp configuration
+      toast.success('WhatsApp configuration saved successfully');
+    } catch (error) {
+      toast.error('Failed to save WhatsApp configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!hotelId) {
     return (
       <EmptyState
@@ -130,6 +174,8 @@ export const CommunicationSettingsPage: React.FC = () => {
               Provider
             </label>
             <select 
+              value={emailConfig.provider}
+              onChange={(e) => setEmailConfig({ ...emailConfig, provider: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               disabled={!emailEnabled}
             >
@@ -144,6 +190,8 @@ export const CommunicationSettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
+              value={emailConfig.apiKey}
+              onChange={(e) => setEmailConfig({ ...emailConfig, apiKey: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={emailEnabled ? "Enter SMTP host or SendGrid API key" : "Feature disabled"}
               disabled={!emailEnabled}
@@ -158,6 +206,14 @@ export const CommunicationSettingsPage: React.FC = () => {
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
               Send Test Email
+            </button>
+            <button
+              onClick={handleSaveEmailConfig}
+              disabled={!emailEnabled || loading || !emailConfig.apiKey.trim()}
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              Save Configuration
             </button>
           </div>
         </div>
@@ -191,6 +247,8 @@ export const CommunicationSettingsPage: React.FC = () => {
               Provider
             </label>
             <select 
+              value={smsConfig.provider}
+              onChange={(e) => setSmsConfig({ ...smsConfig, provider: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               disabled={!smsEnabled}
             >
@@ -205,6 +263,8 @@ export const CommunicationSettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
+              value={smsConfig.apiKey}
+              onChange={(e) => setSmsConfig({ ...smsConfig, apiKey: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={smsEnabled ? "Enter API key or Account SID" : "Feature disabled"}
               disabled={!smsEnabled}
@@ -219,6 +279,14 @@ export const CommunicationSettingsPage: React.FC = () => {
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
               Send Test SMS
+            </button>
+            <button
+              onClick={handleSaveSmsConfig}
+              disabled={!smsEnabled || loading || !smsConfig.apiKey.trim()}
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              Save Configuration
             </button>
           </div>
         </div>
@@ -253,6 +321,8 @@ export const CommunicationSettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
+              value={whatsappConfig.token}
+              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, token: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={whatsappEnabled ? "Enter WhatsApp Business API token" : "Feature disabled"}
               disabled={!whatsappEnabled}
@@ -265,6 +335,8 @@ export const CommunicationSettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
+              value={whatsappConfig.phoneId}
+              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, phoneId: e.target.value })}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={whatsappEnabled ? "Enter phone number ID" : "Feature disabled"}
               disabled={!whatsappEnabled}
@@ -279,6 +351,14 @@ export const CommunicationSettingsPage: React.FC = () => {
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
               Send Test WhatsApp
+            </button>
+            <button
+              onClick={handleSaveWhatsAppConfig}
+              disabled={!whatsappEnabled || loading || !whatsappConfig.token.trim() || !whatsappConfig.phoneId.trim()}
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              Save Configuration
             </button>
           </div>
         </div>

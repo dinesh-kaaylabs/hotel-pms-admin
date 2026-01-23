@@ -4,8 +4,10 @@ import { Calendar, Filter, Zap, LayoutGrid } from 'lucide-react';
 import { useRoomInventory, useRoomTypes } from '../rooms.api';
 import { InventoryTable } from '../components/InventoryTable';
 import { BulkEditDrawer } from '../components/BulkEditDrawer';
+import { useToast } from '../../../components/ui/Toast';
 
 export const RoomsInventoryPage: React.FC = () => {
+  const { success } = useToast();
   const today = new Date().toISOString().split('T')[0];
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -19,6 +21,11 @@ export const RoomsInventoryPage: React.FC = () => {
 
   const { data: inventory, isLoading } = useRoomInventory(filters);
   const { data: roomTypes } = useRoomTypes();
+
+  const handleAdvancedFilters = () => {
+    // TODO: Implement advanced filters modal/drawer
+    success('Advanced filters coming soon.');
+  };
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto pb-12">
@@ -69,7 +76,10 @@ export const RoomsInventoryPage: React.FC = () => {
             ))}
           </select>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+        <button 
+          onClick={handleAdvancedFilters}
+          className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
           <Filter size={16} /> Advanced Filters
         </button>
       </div>

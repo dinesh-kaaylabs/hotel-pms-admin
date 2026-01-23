@@ -4,10 +4,12 @@ import { X, Calendar, DoorOpen, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Booking, BookingStatus } from '../bookings.types';
 import { useUpdateBookingStatus } from '../bookings.api';
+import { useProcessRefund } from '../checkin-checkout.api';
 import { canPerform } from '../bookings.permissions';
 import { useAuth } from '../../../auth/AuthContext';
 import { BookingInvoicePanel } from './BookingInvoicePanel';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { useToast } from '../../../components/ui/Toast';
 
 interface DrawerProps {
   booking: Booking | null;
@@ -16,7 +18,9 @@ interface DrawerProps {
 
 export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }) => {
   const { user } = useAuth();
+  const { success, error } = useToast();
   const updateStatus = useUpdateBookingStatus();
+  const processRefund = useProcessRefund();
   
   // State for confirmation dialogs
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -26,6 +30,9 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
     status: BookingStatus;
     variant: 'danger' | 'primary';
   } | null>(null);
+  
+  // State for refund confirmation
+  const [showRefundConfirm, setShowRefundConfirm] = useState(false);
 
   if (!booking) return null;
 
@@ -33,6 +40,23 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
     await updateStatus.mutateAsync({ id: booking.id, status });
     setConfirmConfig(null);
     onClose();
+  };
+
+  const handleProcessRefund = async () => {
+    try {
+      const refundAmount = booking.paidAmount || booking.totalAmount;
+      await processRefund.mutateAsync({
+        bookingId: booking.id,
+        amount: refundAmount,
+        reason: 'Refund requested by staff',
+        refundMethod: 'ORIGINAL_METHOD'
+      });
+      success('Refund processed successfully');
+      setShowRefundConfirm(false);
+      onClose();
+    } catch (err) {
+      error('Failed to process refund. Please try again.');
+    }
   };
 
   const triggerConfirmation = (status: BookingStatus) => {
@@ -155,9 +179,11 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
                   )}
                   {canPerform('REFUND_PAYMENT', user?.role) && booking.paymentStatus === 'PAID' && (
                     <button 
-                      className="py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all"
+                      onClick={() => setShowRefundConfirm(true)}
+                      disabled={processRefund.isPending}
+                      className="py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
                     >
-                      Process Refund
+                      {processRefund.isPending ? 'Processing...' : 'Process Refund'}
                     </button>
                   )}
                 </div>
@@ -175,6 +201,16 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
         variant={confirmConfig?.variant}
         onConfirm={() => confirmConfig && handleStatusUpdate(confirmConfig.status)}
         onCancel={() => setConfirmConfig(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={showRefundConfirm}
+        title="Process Refund?"
+        description={`This will refund ${booking.paidAmount || booking.totalAmount} to the guest. This action cannot be undone.`}
+        confirmLabel="Process Refund"
+        variant="danger"
+        onConfirm={handleProcessRefund}
+        onCancel={() => setShowRefundConfirm(false)}
       />
     </>
   );

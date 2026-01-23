@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Plus, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBookings } from './bookings.api';
 import { BookingsTable } from './components/BookingsTable';
 import { BookingPagination } from './components/BookingPagination';
@@ -12,9 +13,12 @@ import { TableSkeleton } from '../../components/ui/TableSkeleton';
 import { FilterSkeleton } from '../../components/ui/FilterSkeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 
 export const BookingsPage: React.FC = () => {
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
+  const { success } = useToast();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState('');
@@ -44,6 +48,12 @@ export const BookingsPage: React.FC = () => {
     setPage(1);
   };
 
+  const handleCreateBooking = () => {
+    // TODO: Replace with booking creation drawer/modal when implemented
+    success('Booking creation flow coming soon. For now, bookings can be created through the check-in process.');
+    // Future: navigate('/bookings/new') or open booking creation drawer
+  };
+
   return (
     <PageTransition>
       <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
@@ -52,9 +62,14 @@ export const BookingsPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900">Reservations</h1>
             <p className="text-slate-500 text-sm mt-1 font-medium tracking-tight">Real-time management of property bookings</p>
           </div>
-          <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
-            <Plus size={18} /> New Booking
-          </button>
+          {canCreate && (
+            <button 
+              onClick={handleCreateBooking}
+              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+            >
+              <Plus size={18} /> New Booking
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
@@ -83,7 +98,7 @@ export const BookingsPage: React.FC = () => {
                 }
                 action={{
                   label: search || status !== 'ALL' ? "Clear Filters" : (canCreate ? "Add Your First Booking" : "Contact Admin"),
-                  onClick: search || status !== 'ALL' ? handleReset : () => {}
+                  onClick: search || status !== 'ALL' ? handleReset : (canCreate ? handleCreateBooking : undefined)
                 }}
               />
             </div>

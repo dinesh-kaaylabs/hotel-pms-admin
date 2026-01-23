@@ -9,13 +9,25 @@ import { PaymentFilters as IFilters } from '../payments.types';
 import { PageTransition } from '../../../app/layout/PageTransition';
 import { TableSkeleton } from '../../../components/ui/TableSkeleton';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { useToast } from '../../../components/ui/Toast';
 
 export const PaymentsPage: React.FC = () => {
+  const { success } = useToast();
   const [filters, setFilters] = useState<IFilters>({});
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   const { data, isLoading } = usePayments(filters);
   const hasData = data && data.length > 0;
+
+  const handlePrint = () => {
+    // TODO: Implement print functionality
+    window.print();
+  };
+
+  const handleExportCSV = () => {
+    // TODO: Implement CSV export functionality
+    success('CSV export functionality coming soon.');
+  };
 
   return (
     <PageTransition>
@@ -28,10 +40,16 @@ export const PaymentsPage: React.FC = () => {
             <p className="text-slate-500 text-sm mt-1">Audit-grade financial records and reconciliation</p>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+            <button 
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
               <Printer size={16} /> Print
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all">
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all"
+            >
               <Download size={18} /> Export CSV
             </button>
           </div>
