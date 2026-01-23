@@ -1,0 +1,249 @@
+{
+	"info": {
+		"_postman_id": "8b52f1a3-2c8b-4b1e-9a9e-8c52f1a32c8b",
+		"name": "LuxeStay PMS Admin API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Success flag is true\", function () { pm.expect(json.success).to.eql(true); });",
+									"pm.test(\"Tokens exist\", function () { pm.expect(json.data.accessToken).to.exist; });",
+									"pm.environment.set(\"accessToken\", json.data.accessToken);",
+									"pm.environment.set(\"refreshToken\", json.data.refreshToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@hotel.com\",\n  \"password\": \"Password123!\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login" }
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.environment.set(\"accessToken\", json.data.accessToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/auth/refresh" }
+					}
+				},
+				{
+					"name": "Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Data is object\", function () { pm.expect(json.data).to.be.an('object'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/auth/me" }
+					}
+				}
+			]
+		},
+		{
+			"name": "Booking Management",
+			"item": [
+				{
+					"name": "Check Availability",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Data is array\", function () { pm.expect(json.data).to.be.an('array'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" },
+							{ "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/availability/check?checkIn=2023-12-01&checkOut=2023-12-05",
+							"query": [
+								{ "key": "checkIn", "value": "2023-12-01" },
+								{ "key": "checkOut", "value": "2023-12-05" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Lock Inventory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Lock token exists\", function () { pm.expect(json.data.lockToken).to.exist; });",
+									"pm.environment.set(\"lockToken\", json.data.lockToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomTypeId\": \"{{roomTypeId}}\",\n  \"checkIn\": \"2023-12-01\",\n  \"checkOut\": \"2023-12-05\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/availability/lock" }
+					}
+				},
+				{
+					"name": "Create Booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Booking ID exists\", function () { pm.expect(json.data.id).to.exist; });",
+									"pm.environment.set(\"bookingId\", json.data.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guestName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"roomTypeId\": \"{{roomTypeId}}\",\n  \"checkIn\": \"2023-12-01\",\n  \"checkOut\": \"2023-12-05\",\n  \"lockToken\": \"{{lockToken}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/bookings" }
+					}
+				},
+				{
+					"name": "Check-In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}/check-in" }
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Create Razorpay Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+									"const json = pm.response.json();",
+									"pm.test(\"Order ID exists\", function () { pm.expect(json.data.orderId).to.exist; });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 5000,\n  \"bookingId\": \"{{bookingId}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/payments/razorpay/order" }
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "baseUrl", "value": "https://api.luxestay-pms.com/v1" },
+		{ "key": "tenantId", "value": "550e8400-e29b-41d4-a716-446655440000" },
+		{ "key": "accessToken", "value": "" },
+		{ "key": "refreshToken", "value": "" },
+		{ "key": "bookingId", "value": "" },
+		{ "key": "lockToken", "value": "" },
+		{ "key": "roomTypeId", "value": "standard-queen" }
+	]
+}

@@ -1,0 +1,1024 @@
+openapi: 3.0.3
+info:
+  title: LuxeStay PMS Admin API
+  description: Enterprise-grade multi-tenant Hotel Property Management System Admin Backend API.
+  version: 1.0.0
+servers:
+  - url: https://api.luxestay-pms.com/v1
+    description: Production Server
+  - url: http://localhost:3000/v1
+    description: Local Development
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user and return tokens
+      parameters:
+        - in: header
+          name: X-Tenant-Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: admin@hotel.com }
+                password: { type: string, format: password, example: "Password123!" }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      accessToken: { type: string }
+                      refreshToken: { type: string }
+                      user:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          name: { type: string }
+                          role: { type: string }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: false }
+                  error:
+                    type: object
+                    properties:
+                      code: { type: string, example: AUTH_FAILED }
+                      message: { type: string, example: Invalid credentials }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      accessToken: { type: string }
+                      refreshToken: { type: string }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate current session
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      email: { type: string }
+                      name: { type: string }
+                      role: { type: string }
+                      hotels: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string } } } }
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change user password
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [oldPassword, newPassword]
+              properties:
+                oldPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+
+  /tenants:
+    get:
+      tags: [Tenant Management]
+      summary: List all tenants (Super Admin Only)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, domain: { type: string } } } }
+    post:
+      tags: [Tenant Management]
+      summary: Create new tenant
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, domain]
+              properties:
+                name: { type: string }
+                domain: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object, properties: { id: { type: string } } }
+
+  /hotels:
+    get:
+      tags: [Hotel Management]
+      summary: List hotels under current tenant
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: header
+          name: X-Tenant-Id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, address: { type: string } } } }
+    post:
+      tags: [Hotel Management]
+      summary: Add hotel to tenant
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, address, timezone, currency]
+              properties:
+                name: { type: string }
+                address: { type: string }
+                timezone: { type: string }
+                currency: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object, properties: { id: { type: string } } }
+
+  /hotels/{id}:
+    get:
+      tags: [Hotel Management]
+      summary: Get hotel details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object, properties: { id: { type: string }, name: { type: string } } }
+    put:
+      tags: [Hotel Management]
+      summary: Update hotel details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                address: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /hotels/{id}/switch:
+    post:
+      tags: [Hotel Management]
+      summary: Switch active hotel context for session
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object, properties: { accessToken: { type: string } } }
+
+  /staff:
+    get:
+      tags: [Staff & RBAC]
+      summary: List all staff members
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, email: { type: string }, role: { type: string } } } }
+    post:
+      tags: [Staff & RBAC]
+      summary: Create new staff member
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, roleId]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                roleId: { type: string }
+      responses:
+        '201':
+          description: Created
+
+  /staff/{id}:
+    get:
+      tags: [Staff & RBAC]
+      summary: Get staff profile
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+    put:
+      tags: [Staff & RBAC]
+      summary: Update staff member
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+    delete:
+      tags: [Staff & RBAC]
+      summary: Remove staff member
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: No Content
+
+  /roles:
+    get:
+      tags: [Staff & RBAC]
+      summary: List all roles
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: [Staff & RBAC]
+      summary: Create custom role
+      security: [{ BearerAuth: [] }]
+      responses:
+        '201':
+          description: Created
+
+  /permissions:
+    get:
+      tags: [Staff & RBAC]
+      summary: List all available system permissions
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /room-types:
+    get:
+      tags: [Room Management]
+      summary: List room categories
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: [Room Management]
+      summary: Create room type
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                baseCapacity: { type: integer }
+                maxCapacity: { type: integer }
+                basePrice: { type: number }
+      responses:
+        '201':
+          description: Created
+
+  /room-types/{id}:
+    put:
+      tags: [Room Management]
+      summary: Update room type
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+    delete:
+      tags: [Room Management]
+      summary: Delete room type
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: No Content
+
+  /rooms:
+    get:
+      tags: [Room Management]
+      summary: List physical rooms
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: [Room Management]
+      summary: Add physical room
+      security: [{ BearerAuth: [] }]
+      responses:
+        '201':
+          description: Created
+
+  /rooms/{id}:
+    put:
+      tags: [Room Management]
+      summary: Update physical room
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /rooms/{id}/out-of-order:
+    post:
+      tags: [Room Management]
+      summary: Mark room as Out-of-Order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+      responses:
+        '200':
+          description: Success
+
+  /rooms/{id}/restore:
+    post:
+      tags: [Room Management]
+      summary: Restore room to service
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /availability/check:
+    get:
+      tags: [Availability]
+      summary: Check room availability for dates
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: checkIn
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: checkOut
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: roomTypeId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        roomTypeId: { type: string }
+                        availableCount: { type: integer }
+                        price: { type: number }
+
+  /availability/lock:
+    post:
+      tags: [Availability]
+      summary: Temporary lock inventory for booking flow
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roomTypeId, checkIn, checkOut]
+              properties:
+                roomTypeId: { type: string }
+                checkIn: { type: string, format: date }
+                checkOut: { type: string, format: date }
+      responses:
+        '201':
+          description: Locked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      lockToken: { type: string }
+                      expiresAt: { type: string, format: date-time }
+
+  /availability/release:
+    post:
+      tags: [Availability]
+      summary: Manually release inventory lock
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lockToken]
+              properties:
+                lockToken: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /bookings:
+    get:
+      tags: [Booking Management]
+      summary: Search/List bookings
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED] }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: [Booking Management]
+      summary: Create new booking
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [guestName, email, roomTypeId, checkIn, checkOut]
+              properties:
+                guestName: { type: string }
+                email: { type: string }
+                roomTypeId: { type: string }
+                checkIn: { type: string, format: date }
+                checkOut: { type: string, format: date }
+                lockToken: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object, properties: { id: { type: string }, bookingNumber: { type: string } } }
+
+  /bookings/{id}:
+    get:
+      tags: [Booking Management]
+      summary: Get booking details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /bookings/{id}/status:
+    put:
+      tags: [Booking Management]
+      summary: Update booking status manually
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [CONFIRMED, CANCELLED] }
+      responses:
+        '200':
+          description: Success
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Booking Management]
+      summary: Cancel a reservation
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /bookings/{id}/check-in:
+    post:
+      tags: [Booking Management]
+      summary: Mark guest as checked in
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /bookings/{id}/check-out:
+    post:
+      tags: [Booking Management]
+      summary: Mark guest as checked out and finalize billing
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /housekeeping/tasks:
+    get:
+      tags: [Housekeeping]
+      summary: List all cleaning tasks
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /housekeeping/rooms/{roomId}/status:
+    patch:
+      tags: [Housekeeping]
+      summary: Update room cleaning status
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: roomId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [DIRTY, CLEANING, INSPECTED, CLEAN] }
+      responses:
+        '200':
+          description: Success
+
+  /maintenance/tickets:
+    get:
+      tags: [Maintenance]
+      summary: List maintenance tickets
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: [Maintenance]
+      summary: Create maintenance ticket
+      security: [{ BearerAuth: [] }]
+      responses:
+        '201':
+          description: Created
+
+  /maintenance/tickets/{id}:
+    put:
+      tags: [Maintenance]
+      summary: Update ticket status
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /maintenance/rooms/{roomId}/out-of-order:
+    post:
+      tags: [Maintenance]
+      summary: Move room to OOO via maintenance
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: roomId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /maintenance/rooms/{roomId}/restore:
+    post:
+      tags: [Maintenance]
+      summary: Restore OOO room via maintenance
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: roomId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /payments/razorpay/order:
+    post:
+      tags: [Payments]
+      summary: Create Razorpay order
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, bookingId]
+              properties:
+                amount: { type: number }
+                bookingId: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      orderId: { type: string }
+                      amount: { type: number }
+                      currency: { type: string }
+
+  /payments/razorpay/webhook:
+    post:
+      tags: [Payments]
+      summary: Razorpay webhook listener
+      description: public endpoint for Razorpay notifications
+      responses:
+        '200':
+          description: Success
+
+  /payments/transactions:
+    get:
+      tags: [Payments]
+      summary: List all transactions
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /invoices:
+    get:
+      tags: [Invoices & GST]
+      summary: List all invoices
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /invoices/{id}:
+    get:
+      tags: [Invoices & GST]
+      summary: Get invoice details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+
+  /reports/gst:
+    get:
+      tags: [Invoices & GST]
+      summary: Get GST reports for filing
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: month
+          schema: { type: integer }
+        - in: query
+          name: year
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Success
+
+  /settlements:
+    get:
+      tags: [Settlements]
+      summary: List overall settlements
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /settlements/razorpay:
+    get:
+      tags: [Settlements]
+      summary: List Razorpay payouts
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /settlements/ota:
+    get:
+      tags: [Settlements]
+      summary: List OTA (Booking.com/Expedia) settlements
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /reports/occupancy:
+    get:
+      tags: [Reports]
+      summary: Get occupancy analytics
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /reports/revenue:
+    get:
+      tags: [Reports]
+      summary: Get revenue analytics
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /reports/adr:
+    get:
+      tags: [Reports]
+      summary: Get Average Daily Rate trends
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /reports/revpar:
+    get:
+      tags: [Reports]
+      summary: Get Revenue Per Available Room trends
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+  /reports/source-breakdown:
+    get:
+      tags: [Reports]
+      summary: Breakdown revenue by booking source (OTA vs Direct)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

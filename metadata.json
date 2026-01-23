@@ -1,0 +1,7 @@
+{
+  "name": "LuxeStay PMS - Enterprise Hotel Admin",
+  "description": "A high-end, production-grade Hotel Property Management System (PMS) featuring real-time occupancy tracking, revenue analytics, and AI-powered guest communication.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

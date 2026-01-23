@@ -1,0 +1,63 @@
+---
+name: pms-admin-strict-delivery-rules
+description: Strict guardrails for Hotel PMS Admin project to prevent unwanted code, files, and architecture.
+---
+
+# Overview
+
+This is a production Hotel PMS Admin application.
+The agent must operate in a strict, delivery-focused mode.
+
+This rule exists to prevent over-engineering, unwanted files,
+and speculative architecture changes.
+
+# Absolute Restrictions
+
+- Do NOT generate or modify any `.md` files (README, docs, notes, CLAUDE.md, etc.).
+- Do NOT create new files or folders unless explicitly instructed.
+- Do NOT introduce Redux, Zustand, Context API, or any global state library.
+- Do NOT add token handling, JWT storage, refresh tokens, or session logic.
+- Do NOT add authentication logic on the frontend.
+- Do NOT add new dependencies or libraries.
+- Do NOT refactor unrelated code.
+- Do NOT generate boilerplate, scaffolding, or sample/demo files.
+
+# Frontend Authority Rules
+
+- Backend APIs are the single source of truth.
+- Frontend must NEVER calculate:
+  - prices
+  - GST / tax
+  - totals
+  - availability
+  - discounts
+- Frontend only triggers actions and renders responses.
+
+# Coding Constraints
+
+- Modify ONLY the file(s) explicitly mentioned by the user.
+- One component must not exceed 250 lines.
+- One component = one responsibility.
+- Follow existing project patterns exactly.
+- No speculative abstractions.
+- No premature optimizations.
+
+# Workflow Discipline
+
+- Build ONE page or ONE feature at a time.
+- Stop after completing the requested task.
+- Do NOT continue to the next step without confirmation.
+- If a request is ambiguous, ASK before acting.
+
+# Allowed Behavior
+
+- Explanations are allowed without code.
+- Code generation is allowed ONLY when explicitly requested.
+- Suggestions must be minimal and directly relevant.
+
+# Failure Mode
+
+If any instruction would violate these rules:
+- STOP immediately
+- Explain why it violates the rule
+- Ask how to proceed

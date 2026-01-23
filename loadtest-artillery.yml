@@ -1,0 +1,255 @@
+#!/usr/bin/env node
+
+/**
+ * 🚀 LUXESTAY PMS - LOAD TEST (Node.js + Artillery)
+ * 
+ * Tests GraphQL endpoints with configurable load patterns
+ * 
+ * Usage: npx artillery run loadtest-artillery.yml
+ */
+
+version: 2
+name: LuxeStay PMS Load Test
+description: Multi-tenant SaaS PMS GraphQL API load testing
+
+configuration:
+  processor: "./loadtest-processor.js"
+  variables:
+    baseUrl: "{{ $processEnvironment.BASE_URL || 'http://localhost:5173' }}"
+    tenantId: "{{ $processEnvironment.TENANT_ID || 't-1' }}"
+    hotelId: "{{ $processEnvironment.HOTEL_ID || 'h-101' }}"
+  http:
+    timeout: 10
+    max: 100
+  plugins:
+    statsd:
+      host: localhost
+      port: 8125
+
+scenarios:
+  - name: "Dashboard Load"
+    description: "Simulate multiple users viewing dashboard"
+    flow:
+      - think: 2
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query DashboardStats {
+                dashboardStats {
+                  totalBookings
+                  occupancyRate
+                  revenueToday
+                  avgRoomRate
+                }
+              }
+          expect:
+            - statusCode: 200
+            - hasProperty: body.data.dashboardStats
+
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query Analytics {
+                analytics {
+                  revenueTrend {
+                    date
+                    revenue
+                  }
+                  occupancyTrend {
+                    date
+                    occupancy
+                  }
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 3
+
+  - name: "Booking Operations"
+    description: "Simulate booking CRUD operations"
+    flow:
+      - think: 2
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query ListBookings {
+                bookings(hotelId: "{{ hotelId }}", limit: 50, offset: 0) {
+                  id
+                  bookingNumber
+                  guestName
+                  status
+                  totalAmount
+                }
+              }
+          expect:
+            - statusCode: 200
+            - hasProperty: body.data.bookings
+
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              mutation CreateBooking {
+                createBooking(input: {
+                  hotelId: "{{ hotelId }}"
+                  guestName: "Load Test"
+                  guestEmail: "test@example.com"
+                  checkInDate: "2025-06-01"
+                  checkOutDate: "2025-06-05"
+                  roomType: "Deluxe Suite"
+                  totalAmount: 1000
+                }) {
+                  id
+                  status
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 2
+
+  - name: "Guest Management"
+    description: "Simulate guest list and detail views"
+    flow:
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query ListGuests {
+                guests(hotelId: "{{ hotelId }}", limit: 100, offset: 0) {
+                  id
+                  name
+                  email
+                  phone
+                  tags
+                  totalStays
+                  lifetimeValue
+                }
+              }
+          expect:
+            - statusCode: 200
+            - hasProperty: body.data.guests
+
+      - think: 2
+
+  - name: "Financial Queries"
+    description: "Simulate invoice and payment lookups"
+    flow:
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query ListInvoices {
+                invoices(hotelId: "{{ hotelId }}", limit: 50, offset: 0) {
+                  id
+                  invoiceNumber
+                  guestName
+                  status
+                  totalAmount
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query ListPayments {
+                payments(hotelId: "{{ hotelId }}", limit: 50, offset: 0) {
+                  id
+                  bookingNumber
+                  provider
+                  status
+                  amount
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 3
+
+  - name: "Operations & Maintenance"
+    description: "Housekeeping and maintenance queries"
+    flow:
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query Housekeeping {
+                housekeepingRooms(hotelId: "{{ hotelId }}") {
+                  id
+                  roomNumber
+                  status
+                  assignedStaff {
+                    name
+                  }
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 1
+      - post:
+          url: "{{ baseUrl }}/graphql"
+          json:
+            query: |
+              query Maintenance {
+                maintenanceIssues(hotelId: "{{ hotelId }}") {
+                  id
+                  roomNumber
+                  status
+                  reason
+                }
+              }
+          expect:
+            - statusCode: 200
+
+      - think: 2
+
+# Load phases
+phases:
+  - duration: 60
+    arrivalRate: 5
+    name: "Warm-up"
+
+  - duration: 300
+    arrivalRate: 20
+    name: "Sustained load"
+
+  - duration: 120
+    arrivalRate: 50
+    name: "Peak load"
+
+  - duration: 180
+    arrivalRate: 100
+    name: "High concurrency"
+
+  - duration: 120
+    arrivalRate: 50
+    name: "Ramp-down"
+
+  - duration: 60
+    arrivalRate: 10
+    name: "Cool-down"
+
+# Reporting
+plugins:
+  expect: ~
+  statsd: ~
+
+# Custom reporting
+reporting:
+  - type: "json"
+    filename: "./results/loadtest-results.json"
+  - type: "csv"
+    filename: "./results/loadtest-results.csv"
