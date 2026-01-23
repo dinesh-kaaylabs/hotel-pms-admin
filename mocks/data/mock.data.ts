@@ -1,3 +1,4 @@
+
 /**
  * 🏨 LUXESTAY PMS - CENTRALIZED MOCK DATA (2025–2026)
  * 
@@ -7,7 +8,7 @@
  * NO inline JSON. NO hardcoded responses.
  * 
  * Multi-tenant, multi-hotel, multi-user architecture.
- * 15+ records per entity for realistic dashboard experience.
+ * 50+ records per entity for realistic dashboard experience.
  */
 
 // ============================================================================
@@ -24,7 +25,9 @@ export const authMockData = {
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
     hotels: [
       { id: 'h-101', name: 'LuxeStay Ocean View' },
-      { id: 'h-102', name: 'LuxeStay City Express' }
+      { id: 'h-102', name: 'LuxeStay City Express' },
+      { id: 'h-103', name: 'LuxeStay Heritage Delhi' },
+      { id: 'h-104', name: 'LuxeStay Riverside Bangalore' }
     ]
   },
   staffUsers: [
@@ -35,7 +38,14 @@ export const authMockData = {
     { id: 's-5', name: 'Maya Admin', email: 'maya@luxestay.com', role: 'HOTEL_ADMIN', hotelId: 'h-102', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s5' },
     { id: 's-6', name: 'Amit Manager', email: 'amit@luxestay.com', role: 'HOTEL_MANAGER', hotelId: 'h-102', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s6' },
     { id: 's-7', name: 'Lisa FrontDesk', email: 'lisa@luxestay.com', role: 'FRONT_DESK', hotelId: 'h-102', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s7' },
-    { id: 's-8', name: 'Vikram Housekeeping', email: 'vikram@luxestay.com', role: 'HOUSEKEEPING', hotelId: 'h-102', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s8' }
+    { id: 's-8', name: 'Vikram Housekeeping', email: 'vikram@luxestay.com', role: 'HOUSEKEEPING', hotelId: 'h-102', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s8' },
+    { id: 's-9', name: 'Anil Gupta', email: 'anil@luxestay.com', role: 'HOTEL_MANAGER', hotelId: 'h-103', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s9' },
+    { id: 's-10', name: 'Sita Ram', email: 'sita@luxestay.com', role: 'FRONT_DESK', hotelId: 'h-103', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s10' },
+    { id: 's-11', name: 'Karan Singh', email: 'karan@luxestay.com', role: 'HOUSEKEEPING', hotelId: 'h-103', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s11' },
+    { id: 's-12', name: 'Monica G.', email: 'monica@luxestay.com', role: 'HOTEL_MANAGER', hotelId: 'h-104', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s12' },
+    { id: 's-13', name: 'Chandler B.', email: 'chandler@luxestay.com', role: 'FRONT_DESK', hotelId: 'h-104', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s13' },
+    { id: 's-14', name: 'Joey T.', email: 'joey@luxestay.com', role: 'HOUSEKEEPING', hotelId: 'h-104', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s14' },
+    { id: 's-15', name: 'Rachel G.', email: 'rachel@luxestay.com', role: 'HOTEL_ADMIN', hotelId: 'h-103', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=s15' }
   ],
   mfaCode: '123456',
   mfaToken: 'mfa-token-123'
@@ -47,10 +57,21 @@ export const authMockData = {
 
 export const hotelsMockData = {
   hotels: [
-    { id: 'h-101', name: 'LuxeStay Ocean View', city: 'Goa', status: 'ACTIVE', tenantId: 't-1', address: '123 Ocean View Lane, Goa 403001', timezone: 'Asia/Kolkata', currency: 'USD' },
-    { id: 'h-102', name: 'LuxeStay City Express', city: 'Mumbai', status: 'ACTIVE', tenantId: 't-1', address: '456 City Center, Mumbai 400001', timezone: 'Asia/Kolkata', currency: 'USD' },
-    { id: 'h-103', name: 'LuxeStay Heritage Delhi', city: 'Delhi', status: 'ACTIVE', tenantId: 't-1', address: '789 Heritage Complex, Delhi 110001', timezone: 'Asia/Kolkata', currency: 'USD' },
-    { id: 'h-104', name: 'LuxeStay Riverside Bangalore', city: 'Bangalore', status: 'ACTIVE', tenantId: 't-1', address: '321 Riverside Drive, Bangalore 560001', timezone: 'Asia/Kolkata', currency: 'USD' }
+    { id: 'h-101', name: 'LuxeStay Ocean View', city: 'Goa', status: 'ACTIVE', tenantId: 't-1', address: '123 Ocean View Lane, Goa 403001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-102', name: 'LuxeStay City Express', city: 'Mumbai', status: 'ACTIVE', tenantId: 't-1', address: '456 City Center, Mumbai 400001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-103', name: 'LuxeStay Heritage Delhi', city: 'Delhi', status: 'ACTIVE', tenantId: 't-1', address: '789 Heritage Complex, Delhi 110001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-104', name: 'LuxeStay Riverside Bangalore', city: 'Bangalore', status: 'ACTIVE', tenantId: 't-1', address: '321 Riverside Drive, Bangalore 560001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-105', name: 'LuxeStay Palace Jaipur', city: 'Jaipur', status: 'ACTIVE', tenantId: 't-1', address: '12 Palace Rd, Jaipur 302001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-106', name: 'LuxeStay Hills Manali', city: 'Manali', status: 'MAINTENANCE', tenantId: 't-1', address: '55 Mountain View, Manali 175131', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-107', name: 'LuxeStay Beach Pondicherry', city: 'Pondicherry', status: 'ACTIVE', tenantId: 't-1', address: '88 Promenade, Pondicherry 605001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-108', name: 'LuxeStay Tech Hyderabad', city: 'Hyderabad', status: 'ACTIVE', tenantId: 't-1', address: 'Hitech City Phase 2, Hyderabad 500081', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-109', name: 'LuxeStay Serene Kerala', city: 'Kochi', status: 'ACTIVE', tenantId: 't-1', address: 'Backwater Retreat, Kochi 682001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-110', name: 'LuxeStay Royal Udaipur', city: 'Udaipur', status: 'ACTIVE', tenantId: 't-1', address: 'Lake View Palace, Udaipur 313001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-111', name: 'LuxeStay Urban Pune', city: 'Pune', status: 'ACTIVE', tenantId: 't-1', address: 'Koregaon Park, Pune 411001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-112', name: 'LuxeStay Green Ooty', city: 'Ooty', status: 'ACTIVE', tenantId: 't-1', address: 'Botanical Garden Rd, Ooty 643001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-113', name: 'LuxeStay Port Chennai', city: 'Chennai', status: 'ACTIVE', tenantId: 't-1', address: 'Marina Drive, Chennai 600004', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-114', name: 'LuxeStay Temple Madurai', city: 'Madurai', status: 'ACTIVE', tenantId: 't-1', address: 'Temple View, Madurai 625001', timezone: 'Asia/Kolkata', currency: 'INR' },
+    { id: 'h-115', name: 'LuxeStay Industrial Ahmedabad', city: 'Ahmedabad', status: 'ACTIVE', tenantId: 't-1', address: 'S.G. Highway, Ahmedabad 380054', timezone: 'Asia/Kolkata', currency: 'INR' }
   ],
   defaultHotelId: 'h-101',
   branding: {
@@ -63,107 +84,136 @@ export const hotelsMockData = {
 };
 
 // ============================================================================
-// BOOKINGS (15+ RECORDS, MULTI-HOTEL)
+// BOOKINGS (50+ RECORDS, MULTI-HOTEL)
 // ============================================================================
 
 export const bookingsMockData = {
   bookings: [
-    { id: 'b-1', bookingNumber: 'LS-9901', hotelId: 'h-101', guestName: 'Alice Margeret', guestEmail: 'alice@example.com', checkInDate: '2025-05-18', checkOutDate: '2025-05-22', checkIn: '2025-05-18', checkOut: '2025-05-22', status: 'CONFIRMED', roomType: 'Deluxe Suite', roomNumber: '101', totalAmount: 600, paymentStatus: 'PAID', createdAt: '2025-05-10' },
-    { id: 'b-2', bookingNumber: 'LS-9902', hotelId: 'h-101', guestName: 'Robert Smith', guestEmail: 'robert@example.com', checkInDate: '2025-05-20', checkOutDate: '2025-05-25', checkIn: '2025-05-20', checkOut: '2025-05-25', status: 'CONFIRMED', roomType: 'Standard Room', roomNumber: '102', totalAmount: 400, paymentStatus: 'PAID', createdAt: '2025-05-12' },
-    { id: 'b-3', bookingNumber: 'LS-9903', hotelId: 'h-101', guestName: 'Emma Johnson', guestEmail: 'emma@example.com', checkInDate: '2025-05-25', checkOutDate: '2025-05-28', checkIn: '2025-05-25', checkOut: '2025-05-28', status: 'CHECKED_IN', roomType: 'Deluxe Suite', roomNumber: '103', totalAmount: 450, paymentStatus: 'PAID', createdAt: '2025-05-15' },
-    { id: 'b-4', bookingNumber: 'LS-9904', hotelId: 'h-101', guestName: 'Michael Chen', guestEmail: 'michael@example.com', checkInDate: '2025-05-26', checkOutDate: '2025-05-30', checkIn: '2025-05-26', checkOut: '2025-05-30', status: 'PENDING', roomType: 'Standard Room', roomNumber: '104', totalAmount: 500, paymentStatus: 'PENDING', createdAt: '2025-05-16' },
-    { id: 'b-5', bookingNumber: 'LS-9905', hotelId: 'h-102', guestName: 'Jessica Williams', guestEmail: 'jessica@example.com', checkInDate: '2025-05-19', checkOutDate: '2025-05-23', checkIn: '2025-05-19', checkOut: '2025-05-23', status: 'CONFIRMED', roomType: 'Premium Suite', roomNumber: '201', totalAmount: 700, paymentStatus: 'PAID', createdAt: '2025-05-11' },
-    { id: 'b-6', bookingNumber: 'LS-9906', hotelId: 'h-102', guestName: 'David Brown', guestEmail: 'david@example.com', checkInDate: '2025-05-21', checkOutDate: '2025-05-26', checkIn: '2025-05-21', checkOut: '2025-05-26', status: 'CHECKED_IN', roomType: 'Standard Room', roomNumber: '202', totalAmount: 450, paymentStatus: 'PAID', createdAt: '2025-05-13' },
-    { id: 'b-7', bookingNumber: 'LS-9907', hotelId: 'h-102', guestName: 'Sophia Martinez', guestEmail: 'sophia@example.com', checkInDate: '2025-05-27', checkOutDate: '2025-05-31', checkIn: '2025-05-27', checkOut: '2025-05-31', status: 'PENDING', roomType: 'Deluxe Suite', roomNumber: '203', totalAmount: 550, paymentStatus: 'PENDING', createdAt: '2025-05-17' },
-    { id: 'b-8', bookingNumber: 'LS-9908', hotelId: 'h-101', guestName: 'James Wilson', guestEmail: 'james@example.com', checkInDate: '2025-05-22', checkOutDate: '2025-05-27', checkIn: '2025-05-22', checkOut: '2025-05-27', status: 'CONFIRMED', roomType: 'Premium Suite', roomNumber: '105', totalAmount: 800, paymentStatus: 'PAID', createdAt: '2025-05-14' },
-    { id: 'b-9', bookingNumber: 'LS-9909', hotelId: 'h-102', guestName: 'Olivia Taylor', guestEmail: 'olivia@example.com', checkInDate: '2025-05-23', checkOutDate: '2025-05-29', checkIn: '2025-05-23', checkOut: '2025-05-29', status: 'CHECKED_OUT', roomType: 'Standard Room', roomNumber: '204', totalAmount: 480, paymentStatus: 'PAID', createdAt: '2025-05-15' },
-    { id: 'b-10', bookingNumber: 'LS-9910', hotelId: 'h-101', guestName: 'William Anderson', guestEmail: 'william@example.com', checkInDate: '2025-05-24', checkOutDate: '2025-05-28', checkIn: '2025-05-24', checkOut: '2025-05-28', status: 'CONFIRMED', roomType: 'Deluxe Suite', roomNumber: '106', totalAmount: 520, paymentStatus: 'PAID', createdAt: '2025-05-16' },
-    { id: 'b-11', bookingNumber: 'LS-9911', hotelId: 'h-102', guestName: 'Ava Thomas', guestEmail: 'ava@example.com', checkInDate: '2025-05-25', checkOutDate: '2025-05-30', checkIn: '2025-05-25', checkOut: '2025-05-30', status: 'PENDING', roomType: 'Premium Suite', roomNumber: '205', totalAmount: 750, paymentStatus: 'PENDING', createdAt: '2025-05-18' },
-    { id: 'b-12', bookingNumber: 'LS-9912', hotelId: 'h-101', guestName: 'Henry Garcia', guestEmail: 'henry@example.com', checkInDate: '2025-05-29', checkOutDate: '2025-06-02', checkIn: '2025-05-29', checkOut: '2025-06-02', status: 'CONFIRMED', roomType: 'Standard Room', roomNumber: '107', totalAmount: 420, paymentStatus: 'PAID', createdAt: '2025-05-19' },
-    { id: 'b-13', bookingNumber: 'LS-9913', hotelId: 'h-102', guestName: 'Isabella Rodriguez', guestEmail: 'isabella@example.com', checkInDate: '2025-05-30', checkOutDate: '2025-06-03', checkIn: '2025-05-30', checkOut: '2025-06-03', status: 'CHECKED_IN', roomType: 'Deluxe Suite', roomNumber: '206', totalAmount: 590, paymentStatus: 'PAID', createdAt: '2025-05-20' },
-    { id: 'b-14', bookingNumber: 'LS-9914', hotelId: 'h-101', guestName: 'Lucas Lee', guestEmail: 'lucas@example.com', checkInDate: '2025-06-01', checkOutDate: '2025-06-05', checkIn: '2025-06-01', checkOut: '2025-06-05', status: 'PENDING', roomType: 'Premium Suite', roomNumber: '108', totalAmount: 820, paymentStatus: 'PENDING', createdAt: '2025-05-21' },
-    { id: 'b-15', bookingNumber: 'LS-9915', hotelId: 'h-102', guestName: 'Mia White', guestEmail: 'mia@example.com', checkInDate: '2025-06-02', checkOutDate: '2025-06-06', checkIn: '2025-06-02', checkOut: '2025-06-06', status: 'CONFIRMED', roomType: 'Standard Room', roomNumber: '207', totalAmount: 460, paymentStatus: 'PAID', createdAt: '2025-05-22' },
-    { id: 'b-16', bookingNumber: 'LS-9916', hotelId: 'h-101', guestName: 'Benjamin Harris', guestEmail: 'benjamin@example.com', checkInDate: '2025-06-03', checkOutDate: '2025-06-07', checkIn: '2025-06-03', checkOut: '2025-06-07', status: 'CONFIRMED', roomType: 'Deluxe Suite', roomNumber: '109', totalAmount: 560, paymentStatus: 'PAID', createdAt: '2025-05-23' }
+    { id: 'b-1', bookingNumber: 'LS-9901', hotelId: 'h-101', guestName: 'Alice Margeret', guestEmail: 'alice@example.com', checkInDate: '2025-05-18', checkOutDate: '2025-05-22', checkIn: '2025-05-18', checkOut: '2025-05-22', status: 'CONFIRMED', roomType: 'Deluxe Suite', roomNumber: '101', totalAmount: 45000, paymentStatus: 'PAID', createdAt: '2025-05-10' },
+    { id: 'b-2', bookingNumber: 'LS-9902', hotelId: 'h-101', guestName: 'Robert Smith', guestEmail: 'robert@example.com', checkInDate: '2025-05-20', checkOutDate: '2025-05-25', checkIn: '2025-05-20', checkOut: '2025-05-25', status: 'CONFIRMED', roomType: 'Standard Room', roomNumber: '102', totalAmount: 32000, paymentStatus: 'PAID', createdAt: '2025-05-12' },
+    { id: 'b-3', bookingNumber: 'LS-9903', hotelId: 'h-101', guestName: 'Emma Johnson', guestEmail: 'emma@example.com', checkInDate: '2025-05-25', checkOutDate: '2025-05-28', checkIn: '2025-05-25', checkOut: '2025-05-28', status: 'CHECKED_IN', roomType: 'Deluxe Suite', roomNumber: '103', totalAmount: 38000, paymentStatus: 'PAID', createdAt: '2025-05-15' },
+    { id: 'b-4', bookingNumber: 'LS-9904', hotelId: 'h-101', guestName: 'Michael Chen', guestEmail: 'michael@example.com', checkInDate: '2025-05-26', checkOutDate: '2025-05-30', checkIn: '2025-05-26', checkOut: '2025-05-30', status: 'PENDING', roomType: 'Standard Room', roomNumber: '104', totalAmount: 42000, paymentStatus: 'PENDING', createdAt: '2025-05-16' },
+    { id: 'b-5', bookingNumber: 'LS-9905', hotelId: 'h-102', guestName: 'Jessica Williams', guestEmail: 'jessica@example.com', checkInDate: '2025-05-19', checkOutDate: '2025-05-23', checkIn: '2025-05-19', checkOut: '2025-05-23', status: 'CONFIRMED', roomType: 'Premium Suite', roomNumber: '201', totalAmount: 65000, paymentStatus: 'PAID', createdAt: '2025-05-11' },
+    { id: 'b-6', bookingNumber: 'LS-9906', hotelId: 'h-102', guestName: 'David Brown', guestEmail: 'david@example.com', checkInDate: '2025-05-21', checkOutDate: '2025-05-26', checkIn: '2025-05-21', checkOut: '2025-05-26', status: 'CHECKED_IN', roomType: 'Standard Room', roomNumber: '202', totalAmount: 41000, paymentStatus: 'PAID', createdAt: '2025-05-13' },
+    { id: 'b-7', bookingNumber: 'LS-9907', hotelId: 'h-102', guestName: 'Sophia Martinez', guestEmail: 'sophia@example.com', checkInDate: '2025-05-27', checkOutDate: '2025-05-31', checkIn: '2025-05-27', checkOut: '2025-05-31', status: 'PENDING', roomType: 'Deluxe Suite', roomNumber: '203', totalAmount: 51000, paymentStatus: 'PENDING', createdAt: '2025-05-17' },
+    { id: 'b-8', bookingNumber: 'LS-9908', hotelId: 'h-101', guestName: 'James Wilson', guestEmail: 'james@example.com', checkInDate: '2025-05-22', checkOutDate: '2025-05-27', checkIn: '2025-05-22', checkOut: '2025-05-27', status: 'CONFIRMED', roomType: 'Premium Suite', roomNumber: '105', totalAmount: 72000, paymentStatus: 'PAID', createdAt: '2025-05-14' },
+    { id: 'b-9', bookingNumber: 'LS-9909', hotelId: 'h-102', guestName: 'Olivia Taylor', guestEmail: 'olivia@example.com', checkInDate: '2025-05-23', checkOutDate: '2025-05-29', checkIn: '2025-05-23', checkOut: '2025-05-29', status: 'CHECKED_OUT', roomType: 'Standard Room', roomNumber: '204', totalAmount: 39000, paymentStatus: 'PAID', createdAt: '2025-05-15' },
+    { id: 'b-10', bookingNumber: 'LS-9910', hotelId: 'h-101', guestName: 'William Anderson', guestEmail: 'william@example.com', checkInDate: '2025-05-24', checkOutDate: '2025-05-28', checkIn: '2025-05-24', checkOut: '2025-05-28', status: 'CONFIRMED', roomType: 'Deluxe Suite', roomNumber: '106', totalAmount: 48000, paymentStatus: 'PAID', createdAt: '2025-05-16' },
+    // Adding records up to b-50
+    ...Array.from({ length: 40 }, (_, i) => {
+      const idNum = i + 11;
+      const hotelIdx = (idNum % 4) + 101;
+      const statuses = ['CONFIRMED', 'PENDING', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'NOSHOW'];
+      const status = statuses[idNum % statuses.length];
+      return {
+        id: `b-${idNum}`,
+        bookingNumber: `LS-99${idNum}`,
+        hotelId: `h-${hotelIdx}`,
+        guestName: `Guest ${idNum}`,
+        guestEmail: `guest${idNum}@example.com`,
+        checkInDate: `2025-06-${(idNum % 28) + 1}`,
+        checkOutDate: `2025-06-${(idNum % 28) + 4}`,
+        checkIn: `2025-06-${(idNum % 28) + 1}`,
+        checkOut: `2025-06-${(idNum % 28) + 4}`,
+        status,
+        roomType: idNum % 2 === 0 ? 'Deluxe Suite' : 'Standard Room',
+        roomNumber: `${hotelIdx === 101 ? 100 + (idNum % 10) : 200 + (idNum % 10)}`,
+        totalAmount: 25000 + (idNum * 1000),
+        paymentStatus: status === 'PENDING' ? 'PENDING' : 'PAID',
+        createdAt: '2025-05-20'
+      };
+    })
   ],
   invoices: [
-    { id: 'inv-1', invoiceNumber: 'INV-LS-9901', bookingId: 'b-1', bookingNumber: 'LS-9901', hotelId: 'h-101', guestName: 'Alice Margeret', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 528, issueDate: '2025-05-23', taxAmount: 72, netAmount: 528, totalAmount: 600, currency: 'USD', issuedAt: '2025-05-23', pdfUrl: '#' },
-    { id: 'inv-2', invoiceNumber: 'INV-LS-9902', bookingId: 'b-2', bookingNumber: 'LS-9902', hotelId: 'h-101', guestName: 'Robert Smith', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 352, issueDate: '2025-05-26', taxAmount: 48, netAmount: 352, totalAmount: 400, currency: 'USD', issuedAt: '2025-05-26', pdfUrl: '#' },
-    { id: 'inv-3', invoiceNumber: 'INV-LS-9903', bookingId: 'b-3', bookingNumber: 'LS-9903', hotelId: 'h-101', guestName: 'Emma Johnson', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 396, issueDate: '2025-05-29', taxAmount: 54, netAmount: 396, totalAmount: 450, currency: 'USD', issuedAt: '2025-05-29', pdfUrl: '#' },
-    { id: 'inv-4', invoiceNumber: 'INV-LS-9904', bookingId: 'b-4', bookingNumber: 'LS-9904', hotelId: 'h-101', guestName: 'Michael Chen', gstin: '18AABCT1234H1Z0', status: 'PENDING', subtotal: 440, issueDate: '2025-05-31', taxAmount: 60, netAmount: 440, totalAmount: 500, currency: 'USD', issuedAt: '2025-05-31', pdfUrl: '#' },
-    { id: 'inv-5', invoiceNumber: 'INV-LS-9905', bookingId: 'b-5', bookingNumber: 'LS-9905', hotelId: 'h-102', guestName: 'Jessica Williams', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 616, issueDate: '2025-05-24', taxAmount: 84, netAmount: 616, totalAmount: 700, currency: 'USD', issuedAt: '2025-05-24', pdfUrl: '#' },
-    { id: 'inv-6', invoiceNumber: 'INV-LS-9906', bookingId: 'b-6', bookingNumber: 'LS-9906', hotelId: 'h-102', guestName: 'David Brown', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 396, issueDate: '2025-05-27', taxAmount: 54, netAmount: 396, totalAmount: 450, currency: 'USD', issuedAt: '2025-05-27', pdfUrl: '#' },
-    { id: 'inv-7', invoiceNumber: 'INV-LS-9907', bookingId: 'b-7', bookingNumber: 'LS-9907', hotelId: 'h-102', guestName: 'Sophia Martinez', gstin: '18AABCT1234H1Z0', status: 'PENDING', subtotal: 484, issueDate: '2025-06-01', taxAmount: 66, netAmount: 484, totalAmount: 550, currency: 'USD', issuedAt: '2025-06-01', pdfUrl: '#' },
-    { id: 'inv-8', invoiceNumber: 'INV-LS-9908', bookingId: 'b-8', bookingNumber: 'LS-9908', hotelId: 'h-101', guestName: 'James Wilson', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 704, issueDate: '2025-05-28', taxAmount: 96, netAmount: 704, totalAmount: 800, currency: 'USD', issuedAt: '2025-05-28', pdfUrl: '#' },
-    { id: 'inv-9', invoiceNumber: 'INV-LS-9909', bookingId: 'b-9', bookingNumber: 'LS-9909', hotelId: 'h-102', guestName: 'Olivia Taylor', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 422, issueDate: '2025-05-30', taxAmount: 58, netAmount: 422, totalAmount: 480, currency: 'USD', issuedAt: '2025-05-30', pdfUrl: '#' },
-    { id: 'inv-10', invoiceNumber: 'INV-LS-9910', bookingId: 'b-10', bookingNumber: 'LS-9910', hotelId: 'h-101', guestName: 'William Anderson', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 458, issueDate: '2025-05-29', taxAmount: 62, netAmount: 458, totalAmount: 520, currency: 'USD', issuedAt: '2025-05-29', pdfUrl: '#' },
-    { id: 'inv-11', invoiceNumber: 'INV-LS-9911', bookingId: 'b-11', bookingNumber: 'LS-9911', hotelId: 'h-102', guestName: 'Ava Thomas', gstin: '18AABCT1234H1Z0', status: 'PENDING', subtotal: 660, issueDate: '2025-06-02', taxAmount: 90, netAmount: 660, totalAmount: 750, currency: 'USD', issuedAt: '2025-06-02', pdfUrl: '#' },
-    { id: 'inv-12', invoiceNumber: 'INV-LS-9912', bookingId: 'b-12', bookingNumber: 'LS-9912', hotelId: 'h-101', guestName: 'Henry Garcia', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 369, issueDate: '2025-06-03', taxAmount: 51, netAmount: 369, totalAmount: 420, currency: 'USD', issuedAt: '2025-06-03', pdfUrl: '#' },
-    { id: 'inv-13', invoiceNumber: 'INV-LS-9913', bookingId: 'b-13', bookingNumber: 'LS-9913', hotelId: 'h-102', guestName: 'Isabella Rodriguez', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 519, issueDate: '2025-06-04', taxAmount: 71, netAmount: 519, totalAmount: 590, currency: 'USD', issuedAt: '2025-06-04', pdfUrl: '#' },
-    { id: 'inv-14', invoiceNumber: 'INV-LS-9914', bookingId: 'b-14', bookingNumber: 'LS-9914', hotelId: 'h-101', guestName: 'Lucas Lee', gstin: '18AABCT1234H1Z0', status: 'PENDING', subtotal: 722, issueDate: '2025-06-05', taxAmount: 98, netAmount: 722, totalAmount: 820, currency: 'USD', issuedAt: '2025-06-05', pdfUrl: '#' },
-    { id: 'inv-15', invoiceNumber: 'INV-LS-9915', bookingId: 'b-15', bookingNumber: 'LS-9915', hotelId: 'h-102', guestName: 'Mia White', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 404, issueDate: '2025-06-07', taxAmount: 56, netAmount: 404, totalAmount: 460, currency: 'USD', issuedAt: '2025-06-07', pdfUrl: '#' }
+    { id: 'inv-1', invoiceNumber: 'INV-LS-9901', bookingId: 'b-1', bookingNumber: 'LS-9901', hotelId: 'h-101', guestName: 'Alice Margeret', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 38135, taxAmount: 6865, netAmount: 38135, totalAmount: 45000, currency: 'INR', issuedAt: '2025-05-23', pdfUrl: '#' },
+    ...Array.from({ length: 49 }, (_, i) => {
+      const idNum = i + 2;
+      return {
+        id: `inv-${idNum}`,
+        invoiceNumber: `INV-LS-99${idNum}`,
+        bookingId: `b-${idNum}`,
+        bookingNumber: `LS-99${idNum}`,
+        hotelId: (idNum % 4 + 101).toString(),
+        guestName: `Guest ${idNum}`,
+        gstin: '18AABCT1234H1Z0',
+        status: idNum % 5 === 0 ? 'PENDING' : 'ISSUED',
+        subtotal: 20000 + (idNum * 500),
+        taxAmount: (20000 + (idNum * 500)) * 0.18,
+        netAmount: 20000 + (idNum * 500),
+        totalAmount: (20000 + (idNum * 500)) * 1.18,
+        currency: 'INR',
+        issuedAt: '2025-05-25',
+        pdfUrl: '#'
+      };
+    })
   ]
 };
 
 // ============================================================================
-// GUESTS (15+ RECORDS, MULTI-HOTEL)
+// GUESTS (50+ RECORDS, MULTI-HOTEL)
 // ============================================================================
 
 export const guestsMockData = {
   guests: [
-    { id: 'g-1', hotelId: 'h-101', name: 'Alice Margeret', phone: '+91 9876543210', email: 'alice@example.com', tags: ['VIP'], totalStays: 4, lifetimeValue: 2400, currency: 'USD' },
-    { id: 'g-2', hotelId: 'h-101', name: 'Robert Smith', phone: '+91 9876543211', email: 'robert@example.com', tags: ['FREQUENT'], totalStays: 8, lifetimeValue: 3200, currency: 'USD' },
-    { id: 'g-3', hotelId: 'h-101', name: 'Emma Johnson', phone: '+91 9876543212', email: 'emma@example.com', tags: ['REGULAR'], totalStays: 3, lifetimeValue: 1350, currency: 'USD' },
-    { id: 'g-4', hotelId: 'h-101', name: 'Michael Chen', phone: '+91 9876543213', email: 'michael@example.com', tags: [], totalStays: 1, lifetimeValue: 500, currency: 'USD' },
-    { id: 'g-5', hotelId: 'h-102', name: 'Jessica Williams', phone: '+91 9876543214', email: 'jessica@example.com', tags: ['VIP'], totalStays: 6, lifetimeValue: 4200, currency: 'USD' },
-    { id: 'g-6', hotelId: 'h-102', name: 'David Brown', phone: '+91 9876543215', email: 'david@example.com', tags: ['FREQUENT'], totalStays: 7, lifetimeValue: 3150, currency: 'USD' },
-    { id: 'g-7', hotelId: 'h-102', name: 'Sophia Martinez', phone: '+91 9876543216', email: 'sophia@example.com', tags: ['REGULAR'], totalStays: 2, lifetimeValue: 1000, currency: 'USD' },
-    { id: 'g-8', hotelId: 'h-101', name: 'James Wilson', phone: '+91 9876543217', email: 'james@example.com', tags: ['VIP'], totalStays: 5, lifetimeValue: 4000, currency: 'USD' },
-    { id: 'g-9', hotelId: 'h-102', name: 'Olivia Taylor', phone: '+91 9876543218', email: 'olivia@example.com', tags: ['FREQUENT'], totalStays: 9, lifetimeValue: 3600, currency: 'USD' },
-    { id: 'g-10', hotelId: 'h-101', name: 'William Anderson', phone: '+91 9876543219', email: 'william@example.com', tags: ['REGULAR'], totalStays: 2, lifetimeValue: 1040, currency: 'USD' },
-    { id: 'g-11', hotelId: 'h-102', name: 'Ava Thomas', phone: '+91 9876543220', email: 'ava@example.com', tags: ['VIP'], totalStays: 4, lifetimeValue: 3000, currency: 'USD' },
-    { id: 'g-12', hotelId: 'h-101', name: 'Henry Garcia', phone: '+91 9876543221', email: 'henry@example.com', tags: [], totalStays: 1, lifetimeValue: 420, currency: 'USD' },
-    { id: 'g-13', hotelId: 'h-102', name: 'Isabella Rodriguez', phone: '+91 9876543222', email: 'isabella@example.com', tags: ['FREQUENT'], totalStays: 6, lifetimeValue: 3540, currency: 'USD' },
-    { id: 'g-14', hotelId: 'h-101', name: 'Lucas Lee', phone: '+91 9876543223', email: 'lucas@example.com', tags: ['VIP'], totalStays: 3, lifetimeValue: 2460, currency: 'USD' },
-    { id: 'g-15', hotelId: 'h-102', name: 'Mia White', phone: '+91 9876543224', email: 'mia@example.com', tags: ['REGULAR'], totalStays: 2, lifetimeValue: 920, currency: 'USD' }
+    { id: 'g-1', hotelId: 'h-101', name: 'Alice Margeret', phone: '+91 9876543201', email: 'alice@example.com', tags: ['VIP'], totalStays: 4, lifetimeValue: 180000, currency: 'INR' },
+    { id: 'g-2', hotelId: 'h-101', name: 'Robert Smith', phone: '+91 9876543202', email: 'robert@example.com', tags: ['FREQUENT'], totalStays: 8, lifetimeValue: 240000, currency: 'INR' },
+    ...Array.from({ length: 48 }, (_, i) => {
+      const idNum = i + 3;
+      return {
+        id: `g-${idNum}`,
+        hotelId: `h-${(idNum % 4) + 101}`,
+        name: `Guest Name ${idNum}`,
+        phone: `+91 90000000${idNum.toString().padStart(2, '0')}`,
+        email: `guest${idNum}@example.com`,
+        tags: idNum % 5 === 0 ? ['VIP'] : idNum % 3 === 0 ? ['FREQUENT'] : [],
+        totalStays: (idNum % 10) + 1,
+        lifetimeValue: (idNum % 10 + 1) * 35000,
+        currency: 'INR'
+      };
+    })
   ],
-  guestStays: [
-    { bookingId: 'b-1', bookingNumber: 'LS-9901', guestId: 'g-1', roomType: 'Deluxe Suite', checkInDate: '2025-05-18', checkOutDate: '2025-05-22', amountPaid: 600, status: 'COMPLETED' },
-    { bookingId: 'b-2', bookingNumber: 'LS-9902', guestId: 'g-2', roomType: 'Standard Room', checkInDate: '2025-05-20', checkOutDate: '2025-05-25', amountPaid: 400, status: 'COMPLETED' },
-    { bookingId: 'b-3', bookingNumber: 'LS-9903', guestId: 'g-3', roomType: 'Deluxe Suite', checkInDate: '2025-05-25', checkOutDate: '2025-05-28', amountPaid: 450, status: 'ONGOING' },
-    { bookingId: 'b-5', bookingNumber: 'LS-9905', guestId: 'g-5', roomType: 'Premium Suite', checkInDate: '2025-05-19', checkOutDate: '2025-05-23', amountPaid: 700, status: 'COMPLETED' },
-    { bookingId: 'b-6', bookingNumber: 'LS-9906', guestId: 'g-6', roomType: 'Standard Room', checkInDate: '2025-05-21', checkOutDate: '2025-05-26', amountPaid: 450, status: 'ONGOING' }
-  ],
-  guestNotes: [
-    { id: 'n-1', guestId: 'g-1', note: 'Prefers high floor', createdBy: 'Admin', createdAt: '2025-05-10' },
-    { id: 'n-2', guestId: 'g-2', note: 'Business traveler, early checkout', createdBy: 'Sarah Manager', createdAt: '2025-05-12' },
-    { id: 'n-3', guestId: 'g-5', note: 'VIP guest, arrange welcome amenities', createdBy: 'Priya FrontDesk', createdAt: '2025-05-11' },
-    { id: 'n-4', guestId: 'g-8', note: 'Anniversary booking, complimentary upgrade', createdBy: 'Admin', createdAt: '2025-05-14' }
-  ],
-  newGuestNote: { id: 'n-20', guestId: 'g-1', note: 'Added note', createdBy: 'Admin', createdAt: '2025-05-20' }
+  guestStays: Array.from({ length: 50 }, (_, i) => ({
+    bookingId: `b-${i + 1}`,
+    bookingNumber: `LS-99${i + 1}`,
+    guestId: `g-${(i % 50) + 1}`,
+    roomType: i % 2 === 0 ? 'Deluxe Suite' : 'Standard Room',
+    checkInDate: '2025-05-18',
+    checkOutDate: '2025-05-22',
+    amountPaid: 35000 + (i * 1000),
+    status: i % 3 === 0 ? 'COMPLETED' : 'ONGOING'
+  })),
+  guestNotes: Array.from({ length: 50 }, (_, i) => ({
+    id: `n-${i + 1}`,
+    guestId: `g-${(i % 15) + 1}`,
+    note: `Preference ${i + 1}: High floor and extra towels.`,
+    createdBy: 'Staff User',
+    createdAt: '2025-05-10'
+  })),
+  newGuestNote: { id: 'n-100', guestId: 'g-1', note: 'Added note', createdBy: 'Admin', createdAt: '2025-05-20' }
 };
 
 // ============================================================================
-// ROOMS & INVENTORY (MULTI-HOTEL, MULTI-TYPE)
+// ROOMS & INVENTORY (50+ RECORDS)
 // ============================================================================
 
 export const roomsMockData = {
   rooms: [
-    { id: 'r-101', hotelId: 'h-101', roomNumber: '101', type: 'Deluxe Suite', status: 'CLEAN', floor: 1 },
-    { id: 'r-102', hotelId: 'h-101', roomNumber: '102', type: 'Standard Room', status: 'DIRTY', floor: 1 },
-    { id: 'r-103', hotelId: 'h-101', roomNumber: '103', type: 'Deluxe Suite', status: 'OCCUPIED', floor: 1 },
-    { id: 'r-104', hotelId: 'h-101', roomNumber: '104', type: 'Standard Room', status: 'CLEAN', floor: 2 },
-    { id: 'r-105', hotelId: 'h-101', roomNumber: '105', type: 'Premium Suite', status: 'OCCUPIED', floor: 2 },
-    { id: 'r-106', hotelId: 'h-101', roomNumber: '106', type: 'Deluxe Suite', status: 'CLEAN', floor: 2 },
-    { id: 'r-107', hotelId: 'h-101', roomNumber: '107', type: 'Standard Room', status: 'DIRTY', floor: 3 },
-    { id: 'r-108', hotelId: 'h-101', roomNumber: '108', type: 'Premium Suite', status: 'CLEAN', floor: 3 },
-    { id: 'r-109', hotelId: 'h-101', roomNumber: '109', type: 'Deluxe Suite', status: 'OCCUPIED', floor: 3 },
-    { id: 'r-201', hotelId: 'h-102', roomNumber: '201', type: 'Premium Suite', status: 'CLEAN', floor: 2 },
-    { id: 'r-202', hotelId: 'h-102', roomNumber: '202', type: 'Standard Room', status: 'OCCUPIED', floor: 2 },
-    { id: 'r-203', hotelId: 'h-102', roomNumber: '203', type: 'Deluxe Suite', status: 'DIRTY', floor: 2 },
-    { id: 'r-204', hotelId: 'h-102', roomNumber: '204', type: 'Standard Room', status: 'CLEAN', floor: 3 },
-    { id: 'r-205', hotelId: 'h-102', roomNumber: '205', type: 'Premium Suite', status: 'OCCUPIED', floor: 3 },
-    { id: 'r-206', hotelId: 'h-102', roomNumber: '206', type: 'Deluxe Suite', status: 'CLEAN', floor: 3 },
-    { id: 'r-207', hotelId: 'h-102', roomNumber: '207', type: 'Standard Room', status: 'DIRTY', floor: 4 }
+    ...Array.from({ length: 25 }, (_, i) => ({
+      id: `r-1${i + 1}`,
+      hotelId: 'h-101',
+      roomNumber: `1${(i + 1).toString().padStart(2, '0')}`,
+      type: i % 3 === 0 ? 'Deluxe Suite' : i % 3 === 1 ? 'Standard Room' : 'Premium Suite',
+      status: i % 5 === 0 ? 'DIRTY' : i % 7 === 0 ? 'OCCUPIED' : 'CLEAN',
+      floor: Math.floor(i / 10) + 1
+    })),
+    ...Array.from({ length: 25 }, (_, i) => ({
+      id: `r-2${i + 1}`,
+      hotelId: 'h-102',
+      roomNumber: `2${(i + 1).toString().padStart(2, '0')}`,
+      type: i % 3 === 0 ? 'Deluxe Suite' : i % 3 === 1 ? 'Standard Room' : 'Premium Suite',
+      status: i % 4 === 0 ? 'DIRTY' : 'CLEAN',
+      floor: Math.floor(i / 10) + 1
+    }))
   ],
   roomTypes: [
     { id: 'rt-1', hotelId: 'h-101', name: 'Deluxe Suite', roomTypeName: 'Deluxe Suite', capacity: 4, baseOccupancy: 2, maxOccupancy: 4, active: true, minNights: 1, maxNights: 30 },
@@ -171,100 +221,161 @@ export const roomsMockData = {
     { id: 'rt-3', hotelId: 'h-101', name: 'Premium Suite', roomTypeName: 'Premium Suite', capacity: 6, baseOccupancy: 2, maxOccupancy: 6, active: true, minNights: 2, maxNights: 30 },
     { id: 'rt-4', hotelId: 'h-102', name: 'Deluxe Suite', roomTypeName: 'Deluxe Suite', capacity: 4, baseOccupancy: 2, maxOccupancy: 4, active: true, minNights: 1, maxNights: 30 },
     { id: 'rt-5', hotelId: 'h-102', name: 'Standard Room', roomTypeName: 'Standard Room', capacity: 2, baseOccupancy: 2, maxOccupancy: 2, active: true, minNights: 1, maxNights: 30 },
-    { id: 'rt-6', hotelId: 'h-102', name: 'Premium Suite', roomTypeName: 'Premium Suite', capacity: 6, baseOccupancy: 2, maxOccupancy: 6, active: true, minNights: 2, maxNights: 30 }
+    { id: 'rt-6', hotelId: 'h-102', name: 'Premium Suite', roomTypeName: 'Premium Suite', capacity: 6, baseOccupancy: 2, maxOccupancy: 6, active: true, minNights: 2, maxNights: 30 },
+    ...Array.from({ length: 9 }, (_, i) => ({
+        id: `rt-${i+7}`,
+        hotelId: `h-${103 + i}`,
+        name: 'Executive Room',
+        roomTypeName: 'Executive Room',
+        capacity: 2,
+        baseOccupancy: 2,
+        maxOccupancy: 3,
+        active: true,
+        minNights: 1,
+        maxNights: 30
+    }))
   ],
-  inventory: [
-    { id: 'inv-1', hotelId: 'h-101', roomTypeId: 'rt-1', date: '2025-05-18', totalRooms: 10, availableRooms: 7, status: 'AVAILABLE' },
-    { id: 'inv-2', hotelId: 'h-101', roomTypeId: 'rt-2', date: '2025-05-18', totalRooms: 8, availableRooms: 6, status: 'AVAILABLE' },
-    { id: 'inv-3', hotelId: 'h-101', roomTypeId: 'rt-3', date: '2025-05-18', totalRooms: 4, availableRooms: 2, status: 'AVAILABLE' },
-    { id: 'inv-4', hotelId: 'h-102', roomTypeId: 'rt-4', date: '2025-05-18', totalRooms: 12, availableRooms: 9, status: 'AVAILABLE' },
-    { id: 'inv-5', hotelId: 'h-102', roomTypeId: 'rt-5', date: '2025-05-18', totalRooms: 10, availableRooms: 7, status: 'AVAILABLE' },
-    { id: 'inv-6', hotelId: 'h-102', roomTypeId: 'rt-6', date: '2025-05-18', totalRooms: 5, availableRooms: 3, status: 'AVAILABLE' }
-  ],
-  newRoomType: { id: 'rt-10', name: 'Premium Suite', roomTypeName: 'Premium Suite', capacity: 6, baseOccupancy: 2, maxOccupancy: 6, active: true, minNights: 1, maxNights: 30, success: true }
+  inventory: Array.from({ length: 50 }, (_, i) => ({
+    id: `inv-room-${i + 1}`,
+    hotelId: `h-${(i % 15) + 101}`,
+    roomTypeId: `rt-${(i % 6) + 1}`,
+    date: '2025-05-18',
+    totalRooms: 15,
+    availableRooms: (i % 5) + 5,
+    status: 'AVAILABLE'
+  })),
+  newRoomType: { id: 'rt-99', name: 'Presidential Suite', roomTypeName: 'Presidential Suite', capacity: 10, baseOccupancy: 4, maxOccupancy: 10, active: true, minNights: 1, maxNights: 30, success: true }
 };
 
 // ============================================================================
-// FINANCE & PAYMENTS (15+ RECORDS, MULTI-HOTEL)
+// FINANCE & PAYMENTS (50+ RECORDS)
 // ============================================================================
 
 export const financeMockData = {
-  invoices: [
-    { id: 'inv-1', invoiceNumber: 'INV-LS-9901', bookingId: 'b-1', bookingNumber: 'LS-9901', hotelId: 'h-101', guestName: 'Alice Margeret', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 528, totalAmount: 600, currency: 'USD', issuedAt: '2025-05-23' },
-    { id: 'inv-2', invoiceNumber: 'INV-LS-9902', bookingId: 'b-2', bookingNumber: 'LS-9902', hotelId: 'h-101', guestName: 'Robert Smith', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 352, totalAmount: 400, currency: 'USD', issuedAt: '2025-05-26' },
-    { id: 'inv-3', invoiceNumber: 'INV-LS-9903', bookingId: 'b-3', bookingNumber: 'LS-9903', hotelId: 'h-101', guestName: 'Emma Johnson', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 396, totalAmount: 450, currency: 'USD', issuedAt: '2025-05-29' },
-    { id: 'inv-4', invoiceNumber: 'INV-LS-9904', bookingId: 'b-4', bookingNumber: 'LS-9904', hotelId: 'h-101', guestName: 'Michael Chen', gstin: '18AABCT1234H1Z0', status: 'PENDING', subtotal: 440, totalAmount: 500, currency: 'USD', issuedAt: '2025-05-31' },
-    { id: 'inv-5', invoiceNumber: 'INV-LS-9905', bookingId: 'b-5', bookingNumber: 'LS-9905', hotelId: 'h-102', guestName: 'Jessica Williams', gstin: '18AABCT1234H1Z0', status: 'ISSUED', subtotal: 616, totalAmount: 700, currency: 'USD', issuedAt: '2025-05-24' }
-  ],
-  payments: [
-    { id: 'p-1', hotelId: 'h-101', bookingId: 'b-1', bookingNumber: 'LS-9901', provider: 'STRIPE', providerPaymentId: 'ch_1A8oz2L27z01l6scsHO9idqo', method: 'CARD', status: 'CAPTURED', amount: 600, currency: 'USD', createdAt: '2025-05-15' },
-    { id: 'p-2', hotelId: 'h-101', bookingId: 'b-2', bookingNumber: 'LS-9902', provider: 'STRIPE', providerPaymentId: 'ch_1A8oz2L27z01l6scsHO9idqo1', method: 'CARD', status: 'CAPTURED', amount: 400, currency: 'USD', createdAt: '2025-05-17' },
-    { id: 'p-3', hotelId: 'h-101', bookingId: 'b-3', bookingNumber: 'LS-9903', provider: 'RAZORPAY', providerPaymentId: 'pay_LKm8v4Xn8k1', method: 'CARD', status: 'CAPTURED', amount: 450, currency: 'USD', createdAt: '2025-05-20' },
-    { id: 'p-4', hotelId: 'h-101', bookingId: 'b-4', bookingNumber: 'LS-9904', provider: 'STRIPE', providerPaymentId: 'ch_1A8oz2L27z01l6scsHO9idqo2', method: 'UPI', status: 'PENDING', amount: 500, currency: 'USD', createdAt: '2025-05-21' },
-    { id: 'p-5', hotelId: 'h-102', bookingId: 'b-5', bookingNumber: 'LS-9905', provider: 'RAZORPAY', providerPaymentId: 'pay_LKm8v4Xn8k2', method: 'CARD', status: 'CAPTURED', amount: 700, currency: 'USD', createdAt: '2025-05-16' }
-  ],
-  settlements: [
-    { id: 'set-1', hotelId: 'h-101', source: 'RAZORPAY', referenceId: 'pay_LKm8v4Xn8k', grossAmount: 1000, commission: 0, gatewayFee: 23, netAmount: 977, currency: 'USD', status: 'SETTLED', expectedAt: '2025-05-25', settledAt: '2025-05-18', createdAt: '2025-05-15' },
-    { id: 'set-2', hotelId: 'h-102', source: 'STRIPE', referenceId: 'tr_1A8oz2L27z01l6scs', grossAmount: 1500, commission: 30, gatewayFee: 35, netAmount: 1435, currency: 'USD', status: 'SETTLED', expectedAt: '2025-05-26', settledAt: '2025-05-19', createdAt: '2025-05-16' }
-  ],
-  settlementSummary: { grossRevenue: 125000, netReceivable: 108000, pendingPayout: 17000, currency: 'USD' }
+  invoices: Array.from({ length: 50 }, (_, i) => ({
+    id: `inv-${i + 1}`,
+    invoiceNumber: `INV-LS-99${(i + 1).toString().padStart(2, '0')}`,
+    bookingId: `b-${i + 1}`,
+    bookingNumber: `LS-99${(i + 1).toString().padStart(2, '0')}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    guestName: `Guest ${i + 1}`,
+    gstin: '18AABCT1234H1Z0',
+    status: i % 10 === 0 ? 'PENDING' : 'ISSUED',
+    subtotal: 40000 + (i * 1000),
+    totalAmount: (40000 + (i * 1000)) * 1.18,
+    currency: 'INR',
+    issuedAt: '2025-05-23'
+  })),
+  payments: Array.from({ length: 50 }, (_, i) => ({
+    id: `p-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    bookingId: `b-${i + 1}`,
+    bookingNumber: `LS-99${i + 1}`,
+    provider: i % 2 === 0 ? 'STRIPE' : 'RAZORPAY',
+    providerPaymentId: `txn_${Math.random().toString(36).substr(2, 9)}`,
+    method: i % 3 === 0 ? 'UPI' : 'CARD',
+    status: i % 15 === 0 ? 'PENDING' : 'CAPTURED',
+    amount: 35000 + (i * 500),
+    currency: 'INR',
+    createdAt: '2025-05-15'
+  })),
+  settlements: Array.from({ length: 50 }, (_, i) => ({
+    id: `set-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    source: i % 2 === 0 ? 'RAZORPAY' : 'STRIPE',
+    referenceId: `ref_${i + 1}`,
+    grossAmount: 50000,
+    commission: 1000,
+    gatewayFee: 500,
+    netAmount: 48500,
+    currency: 'INR',
+    status: 'SETTLED',
+    expectedAt: '2025-05-25',
+    settledAt: '2025-05-18',
+    createdAt: '2025-05-15'
+  })),
+  settlementSummary: { grossRevenue: 8500000, netReceivable: 7800000, pendingPayout: 700000, currency: 'INR' }
 };
 
 // ============================================================================
-// HOUSEKEEPING (15+ RECORDS, MULTI-HOTEL)
+// HOUSEKEEPING (50+ RECORDS)
 // ============================================================================
 
 export const housekeepingMockData = {
-  housekeepingRooms: [
-    { id: 'r-101', hotelId: 'h-101', roomNumber: '101', roomType: 'Deluxe Suite', floor: 1, status: 'CLEAN', assignedStaff: { id: 'st-1', name: 'Maria S.' }, lastCleanedAt: '2025-05-18' },
-    { id: 'r-102', hotelId: 'h-101', roomNumber: '102', roomType: 'Standard Room', floor: 1, status: 'DIRTY', assignedStaff: { id: 'st-2', name: 'Raj K.' }, lastCleanedAt: '2025-05-16' },
-    { id: 'r-103', hotelId: 'h-101', roomNumber: '103', roomType: 'Deluxe Suite', floor: 1, status: 'OCCUPIED', assignedStaff: { id: 'st-1', name: 'Maria S.' }, lastCleanedAt: '2025-05-15' },
-    { id: 'r-201', hotelId: 'h-102', roomNumber: '201', roomType: 'Premium Suite', floor: 2, status: 'CLEAN', assignedStaff: { id: 'st-4', name: 'Vikram V.' }, lastCleanedAt: '2025-05-19' },
-    { id: 'r-202', hotelId: 'h-102', roomNumber: '202', roomType: 'Standard Room', floor: 2, status: 'INSPECTED', assignedStaff: { id: 'st-5', name: 'Anita A.' }, lastCleanedAt: '2025-05-17' }
-  ],
-  housekeepingSummary: { dirty: 5, clean: 12, inspected: 3, outOfService: 2 },
-  cleaningLogs: [
-    { id: 'cl-1', hotelId: 'h-101', roomId: 'r-101', staffName: 'Maria S.', status: 'COMPLETED', note: 'Room cleaned', createdAt: '2025-05-18' },
-    { id: 'cl-2', hotelId: 'h-101', roomId: 'r-102', staffName: 'Raj K.', status: 'IN_PROGRESS', note: 'Cleaning in progress', createdAt: '2025-05-19' },
-    { id: 'cl-4', hotelId: 'h-102', roomId: 'r-201', staffName: 'Vikram V.', status: 'COMPLETED', note: 'Deep cleaning completed', createdAt: '2025-05-19' }
-  ]
+  housekeepingRooms: Array.from({ length: 50 }, (_, i) => ({
+    id: `hr-${i + 1}`,
+    hotelId: `h-${(i % 2) + 101}`,
+    roomNumber: `${(i % 2 === 0 ? 100 : 200) + i}`,
+    roomType: i % 3 === 0 ? 'Deluxe Suite' : 'Standard Room',
+    floor: Math.floor(i / 10) + 1,
+    status: i % 5 === 0 ? 'DIRTY' : i % 8 === 0 ? 'INSPECTED' : 'CLEAN',
+    assignedStaff: { id: `st-${(i % 5) + 1}`, name: `Staff ${i % 5 + 1}` },
+    lastCleanedAt: '2025-05-18'
+  })),
+  housekeepingSummary: { dirty: 15, clean: 25, inspected: 7, outOfService: 3 },
+  cleaningLogs: Array.from({ length: 50 }, (_, i) => ({
+    id: `cl-${i + 1}`,
+    hotelId: `h-${(i % 2) + 101}`,
+    roomId: `r-1${(i % 10) + 1}`,
+    staffName: `Staff ${i % 5 + 1}`,
+    status: 'COMPLETED',
+    note: 'Daily maintenance completed.',
+    createdAt: '2025-05-19'
+  }))
 };
 
 // ============================================================================
-// MAINTENANCE (15+ RECORDS, MULTI-HOTEL)
+// MAINTENANCE (50+ RECORDS)
 // ============================================================================
 
 export const maintenanceMockData = {
-  maintenanceIssues: [
-    { id: 'm-1', hotelId: 'h-101', roomId: 'r-102', roomNumber: '102', roomType: 'Standard Room', reason: 'AC Leak', status: 'OPEN', blockedFrom: '2025-05-20', blockedTo: '2025-05-22', reportedBy: 'Maria S.', resolvedAt: null, createdAt: '2025-05-20' },
-    { id: 'm-2', hotelId: 'h-101', roomId: 'r-103', roomNumber: '103', roomType: 'Deluxe Suite', reason: 'Toilet Flush Issue', status: 'IN_PROGRESS', blockedFrom: '2025-05-18', blockedTo: '2025-05-20', reportedBy: 'Priya R.', resolvedAt: null, createdAt: '2025-05-18' },
-    { id: 'm-4', hotelId: 'h-102', roomId: 'r-202', roomNumber: '202', roomType: 'Standard Room', reason: 'Door Lock Malfunction', status: 'OPEN', blockedFrom: '2025-05-21', blockedTo: '2025-05-23', reportedBy: 'Vikram V.', resolvedAt: null, createdAt: '2025-05-21' }
-  ]
+  maintenanceIssues: Array.from({ length: 50 }, (_, i) => ({
+    id: `m-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    roomId: `r-1${(i % 20) + 1}`,
+    roomNumber: `1${(i % 20) + 1}`,
+    roomType: 'Standard Room',
+    reason: i % 3 === 0 ? 'AC Leak' : i % 3 === 1 ? 'WiFi Issue' : 'Plumbing',
+    status: i % 5 === 0 ? 'OPEN' : i % 5 === 1 ? 'IN_PROGRESS' : 'RESOLVED',
+    blockedFrom: '2025-05-20',
+    blockedTo: '2025-05-22',
+    reportedBy: 'Staff Member',
+    resolvedAt: i % 5 > 1 ? '2025-05-21' : null,
+    createdAt: '2025-05-20'
+  }))
 };
 
 // ============================================================================
-// PRICING (15+ RECORDS, MULTI-HOTEL)
+// PRICING (50+ RECORDS)
 // ============================================================================
 
 export const pricingMockData = {
-  ratePlans: [
-    { id: 'rp-1', hotelId: 'h-101', name: 'Standard Rate', roomTypeId: 'rt-1', roomTypeName: 'Deluxe Suite', status: 'ACTIVE', refundable: true, minNights: 1, maxNights: 30 },
-    { id: 'rp-2', hotelId: 'h-101', name: 'Weekend Rate', roomTypeId: 'rt-2', roomTypeName: 'Standard Room', status: 'ACTIVE', refundable: false, minNights: 2, maxNights: 7 },
-    { id: 'rp-3', hotelId: 'h-101', name: 'Long Stay Rate', roomTypeId: 'rt-3', roomTypeName: 'Premium Suite', status: 'ACTIVE', refundable: true, minNights: 7, maxNights: 30 },
-    { id: 'rp-4', hotelId: 'h-102', name: 'Standard Rate', roomTypeId: 'rt-4', roomTypeName: 'Deluxe Suite', status: 'ACTIVE', refundable: true, minNights: 1, maxNights: 30 },
-    { id: 'rp-5', hotelId: 'h-102', name: 'Corporate Rate', roomTypeId: 'rt-5', roomTypeName: 'Standard Room', status: 'ACTIVE', refundable: true, minNights: 3, maxNights: 30 }
-  ],
-  pricingCalendar: [
-    { id: 'pr-1', hotelId: 'h-101', date: '2025-05-18', roomTypeId: 'rt-1', ratePlanId: 'rp-1', price: 150, availableRooms: 8, closed: false },
-    { id: 'pr-2', hotelId: 'h-101', date: '2025-05-19', roomTypeId: 'rt-1', ratePlanId: 'rp-1', price: 160, availableRooms: 7, closed: false },
-    { id: 'pr-6', hotelId: 'h-102', date: '2025-05-18', roomTypeId: 'rt-4', ratePlanId: 'rp-4', price: 180, availableRooms: 10, closed: false },
-    { id: 'pr-7', hotelId: 'h-102', date: '2025-05-19', roomTypeId: 'rt-4', ratePlanId: 'rp-4', price: 190, availableRooms: 9, closed: false }
-  ],
-  newRatePlan: { id: 'rp-7', name: 'Premium Rate', roomTypeId: 'rt-1', roomTypeName: 'Deluxe Suite', status: 'ACTIVE', refundable: true, minNights: 1, maxNights: 30, success: true }
+  ratePlans: Array.from({ length: 50 }, (_, i) => ({
+    id: `rp-${i + 1}`,
+    hotelId: `h-${(i % 15) + 101}`,
+    name: i % 3 === 0 ? 'Standard Rate' : i % 3 === 1 ? 'Weekend Special' : 'Corporate Plus',
+    roomTypeId: `rt-${(i % 6) + 1}`,
+    roomTypeName: 'Dynamic Room Type',
+    status: 'ACTIVE',
+    refundable: i % 2 === 0,
+    minNights: 1,
+    maxNights: 30
+  })),
+  pricingCalendar: Array.from({ length: 100 }, (_, i) => ({
+    id: `pr-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    date: `2025-05-${(i % 30) + 1}`,
+    roomTypeId: `rt-${(i % 6) + 1}`,
+    ratePlanId: `rp-${(i % 5) + 1}`,
+    price: 4500 + (i * 100),
+    availableRooms: 10,
+    closed: false
+  })),
+  newRatePlan: { id: 'rp-100', name: 'Festive Season Rate', roomTypeId: 'rt-1', roomTypeName: 'Deluxe Suite', status: 'ACTIVE', refundable: true, minNights: 1, maxNights: 30, success: true }
 };
 
 // ============================================================================
-// SETTINGS & ADMIN (MULTI-TENANT, MULTI-HOTEL)
+// SETTINGS & ADMIN (EXPANDED)
 // ============================================================================
 
 export const settingsMockData = {
@@ -274,7 +385,7 @@ export const settingsMockData = {
     address: '123 Ocean View Lane, Goa 403001',
     city: 'Goa',
     timezone: 'Asia/Kolkata',
-    currency: 'USD',
+    currency: 'INR',
     contactEmail: 'contact@luxestay.com',
     contactPhone: '+91 832 555 1234',
     brand: {
@@ -284,73 +395,45 @@ export const settingsMockData = {
       logoUrl: 'https://api.dicebear.com/7.x/icons/svg?seed=luxestay'
     }
   },
-  staffUsers: [
-    { id: 's-1', name: 'John Admin', role: 'HOTEL_ADMIN', active: true, email: 'admin@luxestay.com' },
-    { id: 's-2', name: 'Sarah Manager', role: 'HOTEL_MANAGER', active: true, email: 'sarah@luxestay.com' },
-    { id: 's-3', name: 'Priya FrontDesk', role: 'FRONT_DESK', active: true, email: 'priya@luxestay.com' },
-    { id: 's-5', name: 'Maya Admin', role: 'HOTEL_ADMIN', active: true, email: 'maya@luxestay.com' }
-  ]
+  staffUsers: Array.from({ length: 30 }, (_, i) => ({
+    id: `s-${i + 1}`,
+    name: `User ${i + 1}`,
+    role: i % 4 === 0 ? 'HOTEL_ADMIN' : i % 4 === 1 ? 'HOTEL_MANAGER' : 'FRONT_DESK',
+    active: true,
+    email: `user${i + 1}@luxestay.com`
+  }))
 };
 
 // ============================================================================
-// ANALYTICS & DASHBOARD (MULTI-HOTEL, TIME-SERIES)
+// ANALYTICS & DASHBOARD (50+ RECORDS)
 // ============================================================================
 
 export const analyticsMockData = {
-  reportSummary: { totalRevenue: 12000, totalBookings: 45, occupancyRate: 85, adr: 250 },
-  dashboardStats: { totalBookings: 45, occupancyRate: 85, revenueToday: 2400, avgRoomRate: 275 },
-  revenueTrend: [
-    { date: '2025-05-10', revenue: 1200, bookings: 3 },
-    { date: '2025-05-11', revenue: 1500, bookings: 4 },
-    { date: '2025-05-12', revenue: 1800, bookings: 5 },
-    { date: '2025-05-13', revenue: 1600, bookings: 4 },
-    { date: '2025-05-14', revenue: 2000, bookings: 5 },
-    { date: '2025-05-15', revenue: 2200, bookings: 6 },
-    { date: '2025-05-16', revenue: 1950, bookings: 5 },
-    { date: '2025-05-17', revenue: 2100, bookings: 5 },
-    { date: '2025-05-18', revenue: 2400, bookings: 6 },
-    { date: '2025-05-19', revenue: 2300, bookings: 6 },
-    { date: '2025-05-20', revenue: 2500, bookings: 7 },
-    { date: '2025-05-21', revenue: 2600, bookings: 7 },
-    { date: '2025-05-22', revenue: 2450, bookings: 6 },
-    { date: '2025-05-23', revenue: 2550, bookings: 6 },
-    { date: '2025-05-24', revenue: 2700, bookings: 7 }
-  ],
-  occupancyTrend: [
-    { date: '2025-05-10', occupancy: 75 },
-    { date: '2025-05-11', occupancy: 78 },
-    { date: '2025-05-12', occupancy: 82 },
-    { date: '2025-05-13', occupancy: 79 },
-    { date: '2025-05-14', occupancy: 85 },
-    { date: '2025-05-15', occupancy: 88 },
-    { date: '2025-05-16', occupancy: 84 },
-    { date: '2025-05-17', occupancy: 86 },
-    { date: '2025-05-18', occupancy: 89 },
-    { date: '2025-05-19', occupancy: 87 },
-    { date: '2025-05-20', occupancy: 91 },
-    { date: '2025-05-21', occupancy: 92 },
-    { date: '2025-05-22', occupancy: 88 },
-    { date: '2025-05-23', occupancy: 89 },
-    { date: '2025-05-24', occupancy: 93 }
-  ]
+  reportSummary: { totalRevenue: 12500000, totalBookings: 850, occupancyRate: 78, adr: 4500 },
+  dashboardStats: { totalBookings: 850, occupancyRate: 78, revenueToday: 245000, avgRoomRate: 4850 },
+  revenueTrend: Array.from({ length: 60 }, (_, i) => ({
+    date: `2025-04-${(i % 30) + 1}`,
+    revenue: 150000 + (Math.random() * 50000),
+    bookings: 10 + Math.floor(Math.random() * 10)
+  })),
+  occupancyTrend: Array.from({ length: 60 }, (_, i) => ({
+    date: `2025-04-${(i % 30) + 1}`,
+    occupancy: 65 + Math.floor(Math.random() * 30)
+  }))
 };
 
 // ============================================================================
-// CHECK-IN / CHECK-OUT MOCK DATA (Phase 1)
+// CHECK-IN / CHECK-OUT MOCK DATA
 // ============================================================================
 
 export const checkinCheckoutMockData = {
-  availableRooms: [
-    // Deluxe Suite rooms (rt-1)
-    { id: 'r-101', number: '101', floor: 1, status: 'AVAILABLE', roomType: { id: 'rt-1', name: 'Deluxe Suite' } },
-    { id: 'r-106', number: '106', floor: 2, status: 'AVAILABLE', roomType: { id: 'rt-1', name: 'Deluxe Suite' } },
-    { id: 'r-109', number: '109', floor: 3, status: 'AVAILABLE', roomType: { id: 'rt-1', name: 'Deluxe Suite' } },
-    // Standard Room rooms (rt-2)
-    { id: 'r-104', number: '104', floor: 2, status: 'AVAILABLE', roomType: { id: 'rt-2', name: 'Standard Room' } },
-    { id: 'r-107', number: '107', floor: 3, status: 'AVAILABLE', roomType: { id: 'rt-2', name: 'Standard Room' } },
-    // Premium Suite rooms (rt-3)
-    { id: 'r-108', number: '108', floor: 3, status: 'AVAILABLE', roomType: { id: 'rt-3', name: 'Premium Suite' } },
-  ],
+  availableRooms: Array.from({ length: 50 }, (_, i) => ({
+    id: `r-avl-${i + 1}`,
+    number: `1${(i + 1).toString().padStart(2, '0')}`,
+    floor: Math.floor(i / 10) + 1,
+    status: 'AVAILABLE',
+    roomType: { id: `rt-${(i % 3) + 1}`, name: i % 3 === 0 ? 'Deluxe Suite' : i % 3 === 1 ? 'Standard Room' : 'Premium Suite' }
+  })),
   checkInResponse: {
     success: true,
     message: 'Guest checked in successfully',
@@ -363,15 +446,8 @@ export const checkinCheckoutMockData = {
   checkOutResponse: {
     success: true,
     message: 'Guest checked out successfully',
-    booking: {
-      id: 'b-3',
-      status: 'CHECKED_OUT',
-    },
-    invoice: {
-      id: 'inv-new',
-      invoiceNumber: 'INV-2025-00001',
-      pdfUrl: '/invoices/inv-new.pdf',
-    },
+    booking: { id: 'b-3', status: 'CHECKED_OUT' },
+    invoice: { id: 'inv-new', invoiceNumber: 'INV-2025-00001', pdfUrl: '/invoices/inv-new.pdf' },
   },
   generateInvoiceResponse: {
     success: true,
@@ -380,29 +456,14 @@ export const checkinCheckoutMockData = {
       id: 'inv-new',
       invoiceNumber: 'INV-2025-00001',
       issueDate: '2025-05-28',
-      booking: {
-        id: 'b-3',
-        bookingNumber: 'LS-9903',
-      },
-      guest: {
-        name: 'Emma Johnson',
-        email: 'emma@example.com',
-        gstin: undefined,
-      },
+      booking: { id: 'b-3', bookingNumber: 'LS-9903' },
+      guest: { name: 'Emma Johnson', email: 'emma@example.com', gstin: undefined },
       lineItems: [
-        {
-          description: 'Room Charges (3 nights)',
-          quantity: 3,
-          unitPrice: 150,
-          amount: 450,
-          hsnCode: '9963',
-          taxRate: 18,
-          taxAmount: 81,
-        },
+        { description: 'Room Charges (3 nights)', quantity: 3, unitPrice: 4500, amount: 13500, hsnCode: '9963', taxRate: 18, taxAmount: 2430 }
       ],
-      subtotal: 450,
-      gstAmount: 81,
-      totalAmount: 531,
+      subtotal: 13500,
+      gstAmount: 2430,
+      totalAmount: 15930,
       pdfUrl: '/invoices/inv-new.pdf',
     },
   },
@@ -411,7 +472,7 @@ export const checkinCheckoutMockData = {
     message: 'Payment recorded successfully',
     payment: {
       id: 'p-new',
-      amount: 600,
+      amount: 45000,
       method: 'CASH',
       status: 'CAPTURED',
       transactionId: undefined,
@@ -423,7 +484,7 @@ export const checkinCheckoutMockData = {
     message: 'Refund processed successfully',
     refund: {
       id: 'ref-new',
-      amount: 300,
+      amount: 5000,
       status: 'PROCESSED',
       reason: 'CANCELLATION',
       approvedBy: 'admin@luxestay.com',
@@ -437,33 +498,46 @@ export const checkinCheckoutMockData = {
 // ============================================================================
 
 export const phase2CommunicationMockData = {
-  communicationLogs: [
-    { id: 'comm-1', recipient: 'alice@example.com', channel: 'EMAIL', templateId: 'tpl-1', template: { id: 'tpl-1', name: 'Booking Confirmation' }, status: 'DELIVERED', sentAt: '2025-05-10T10:00:00Z', deliveredAt: '2025-05-10T10:00:05Z', error: undefined, retryCount: 0 },
-    { id: 'comm-2', recipient: '+919876543210', channel: 'SMS', templateId: 'tpl-2', template: { id: 'tpl-2', name: 'Check-in Reminder' }, status: 'SENT', sentAt: '2025-05-18T08:00:00Z', deliveredAt: undefined, error: undefined, retryCount: 0 },
-    { id: 'comm-3', recipient: '+919876543211', channel: 'WHATSAPP', templateId: 'tpl-3', template: { id: 'tpl-3', name: 'Check-out Confirmation' }, status: 'READ', sentAt: '2025-05-22T12:00:00Z', deliveredAt: '2025-05-22T12:00:02Z', error: undefined, retryCount: 0 },
-    { id: 'comm-4', recipient: 'robert@example.com', channel: 'EMAIL', templateId: 'tpl-1', template: { id: 'tpl-1', name: 'Booking Confirmation' }, status: 'FAILED', sentAt: '2025-05-12T10:00:00Z', deliveredAt: undefined, error: 'SMTP connection timeout', retryCount: 3 },
-    { id: 'comm-5', recipient: 'emma@example.com', channel: 'EMAIL', templateId: 'tpl-4', template: { id: 'tpl-4', name: 'Invoice' }, status: 'DELIVERED', sentAt: '2025-05-25T14:00:00Z', deliveredAt: '2025-05-25T14:00:03Z', error: undefined, retryCount: 0 },
-  ],
-  templates: [
-    { id: 'tpl-1', name: 'Booking Confirmation', category: 'BOOKING_CONFIRMATION', channel: 'EMAIL', subject: 'Booking Confirmed - {{bookingNumber}}', body: 'Dear {{guestName}}, your booking {{bookingNumber}} is confirmed. Check-in: {{checkInDate}}, Check-out: {{checkOutDate}}.', variables: ['guestName', 'bookingNumber', 'checkInDate', 'checkOutDate'], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
-    { id: 'tpl-2', name: 'Check-in Reminder', category: 'CHECK_IN_REMINDER', channel: 'SMS', subject: undefined, body: 'Hi {{guestName}}, reminder: Check-in today at {{checkInDate}}. Room {{roomNumber}} is ready.', variables: ['guestName', 'checkInDate', 'roomNumber'], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
-    { id: 'tpl-3', name: 'Check-out Confirmation', category: 'CHECK_OUT_CONFIRMATION', channel: 'WHATSAPP', subject: undefined, body: 'Thank you {{guestName}}! Your invoice {{invoiceNumber}} has been sent. Total: {{totalAmount}}.', variables: ['guestName', 'invoiceNumber', 'totalAmount'], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
-    { id: 'tpl-4', name: 'Invoice Email', category: 'INVOICE', channel: 'EMAIL', subject: 'Invoice {{invoiceNumber}}', body: 'Dear {{guestName}}, please find your invoice {{invoiceNumber}} attached. Total: {{totalAmount}}.', variables: ['guestName', 'invoiceNumber', 'totalAmount'], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
-  ],
-  triggers: [
-    { id: 'trig-1', event: 'BOOKING_CONFIRMED', templateId: 'tpl-1', template: { id: 'tpl-1', name: 'Booking Confirmation' }, channel: 'EMAIL', isEnabled: true, conditions: undefined },
-    { id: 'trig-2', event: 'CHECK_IN_COMPLETED', templateId: 'tpl-2', template: { id: 'tpl-2', name: 'Check-in Reminder' }, channel: 'SMS', isEnabled: true, conditions: undefined },
-    { id: 'trig-3', event: 'CHECK_OUT_COMPLETED', templateId: 'tpl-3', template: { id: 'tpl-3', name: 'Check-out Confirmation' }, channel: 'WHATSAPP', isEnabled: false, conditions: undefined },
-    { id: 'trig-4', event: 'INVOICE_GENERATED', templateId: 'tpl-4', template: { id: 'tpl-4', name: 'Invoice Email' }, channel: 'EMAIL', isEnabled: true, conditions: undefined },
-  ],
-  // Feature flags (mock - would be from backend in real implementation)
+  communicationLogs: Array.from({ length: 50 }, (_, i) => ({
+    id: `comm-${i + 1}`,
+    recipient: `guest${i + 1}@example.com`,
+    channel: i % 3 === 0 ? 'EMAIL' : i % 3 === 1 ? 'SMS' : 'WHATSAPP',
+    templateId: `tpl-${(i % 4) + 1}`,
+    template: { id: `tpl-${(i % 4) + 1}`, name: 'System Template' },
+    status: i % 10 === 0 ? 'FAILED' : 'DELIVERED',
+    sentAt: '2025-05-10T10:00:00Z',
+    deliveredAt: i % 10 !== 0 ? '2025-05-10T10:00:05Z' : undefined,
+    error: i % 10 === 0 ? 'Provider timeout' : undefined,
+    retryCount: i % 10 === 0 ? 3 : 0
+  })),
+  templates: Array.from({ length: 20 }, (_, i) => ({
+    id: `tpl-${i + 1}`,
+    name: `Template ${i + 1}`,
+    category: i % 4 === 0 ? 'BOOKING_CONFIRMATION' : i % 4 === 1 ? 'CHECK_IN_REMINDER' : 'INVOICE',
+    channel: i % 2 === 0 ? 'EMAIL' : 'SMS',
+    subject: `Update regarding {{bookingNumber}}`,
+    body: 'Hello {{guestName}}, this is an automated update.',
+    variables: ['guestName', 'bookingNumber'],
+    isActive: true,
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z'
+  })),
+  triggers: Array.from({ length: 20 }, (_, i) => ({
+    id: `trig-${i + 1}`,
+    event: i % 4 === 0 ? 'BOOKING_CONFIRMED' : i % 4 === 1 ? 'CHECK_IN_COMPLETED' : 'INVOICE_GENERATED',
+    templateId: `tpl-${(i % 4) + 1}`,
+    template: { id: `tpl-${(i % 4) + 1}`, name: 'Linked Template' },
+    channel: i % 2 === 0 ? 'EMAIL' : 'SMS',
+    isEnabled: true,
+    conditions: undefined
+  })),
   featureFlags: {
-    COMMUNICATION_EMAIL_ENABLED: false,
-    COMMUNICATION_SMS_ENABLED: false,
-    COMMUNICATION_WHATSAPP_ENABLED: false,
-    COMMUNICATION_TEMPLATES_ENABLED: false,
-    COMMUNICATION_AUTOMATION_ENABLED: false,
-    COMMUNICATION_LOGS_ENABLED: false,
+    COMMUNICATION_EMAIL_ENABLED: true,
+    COMMUNICATION_SMS_ENABLED: true,
+    COMMUNICATION_WHATSAPP_ENABLED: true,
+    COMMUNICATION_TEMPLATES_ENABLED: true,
+    COMMUNICATION_AUTOMATION_ENABLED: true,
+    COMMUNICATION_LOGS_ENABLED: true,
   },
 };
 
@@ -472,26 +546,29 @@ export const phase2CommunicationMockData = {
 // ============================================================================
 
 export const phase2AuditMockData = {
-  auditLogs: [
-    { id: 'audit-1', action: 'CHECK_IN', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'BOOKING', entityId: 'b-1', beforeValues: { status: 'CONFIRMED' }, afterValues: { status: 'CHECKED_IN' }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-18T10:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-2', action: 'CHECK_OUT', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'BOOKING', entityId: 'b-3', beforeValues: { status: 'CHECKED_IN' }, afterValues: { status: 'CHECKED_OUT' }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-25T12:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-3', action: 'PAYMENT_RECORDED', actor: { id: 's-2', email: 'sarah@luxestay.com', role: 'HOTEL_MANAGER' }, entityType: 'PAYMENT', entityId: 'p-1', beforeValues: undefined, afterValues: { amount: 600, method: 'CASH' }, ipAddress: '192.168.1.101', userAgent: 'Mozilla/5.0', timestamp: '2025-05-15T14:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-4', action: 'REFUND_PROCESSED', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'REFUND', entityId: 'ref-1', beforeValues: { status: 'PENDING' }, afterValues: { status: 'PROCESSED', amount: 300 }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-20T16:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-5', action: 'BOOKING_CREATED', actor: { id: 's-3', email: 'priya@luxestay.com', role: 'FRONT_DESK' }, entityType: 'BOOKING', entityId: 'b-4', beforeValues: undefined, afterValues: { bookingNumber: 'LS-9904', guestName: 'Michael Chen' }, ipAddress: '192.168.1.102', userAgent: 'Mozilla/5.0', timestamp: '2025-05-16T09:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-6', action: 'USER_CREATED', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'USER', entityId: 's-9', beforeValues: undefined, afterValues: { email: 'newuser@luxestay.com', role: 'STAFF' }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-10T11:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-7', action: 'USER_ROLE_CHANGED', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'USER', entityId: 's-2', beforeValues: { role: 'STAFF' }, afterValues: { role: 'HOTEL_MANAGER' }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-12T13:00:00Z', hotelId: 'h-101' },
-    { id: 'audit-8', action: 'PRICE_CHANGED', actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' }, entityType: 'PRICING', entityId: 'pr-1', beforeValues: { price: 150 }, afterValues: { price: 160 }, ipAddress: '192.168.1.100', userAgent: 'Mozilla/5.0', timestamp: '2025-05-19T10:00:00Z', hotelId: 'h-101' },
-  ],
+  auditLogs: Array.from({ length: 60 }, (_, i) => ({
+    id: `audit-${i + 1}`,
+    action: i % 5 === 0 ? 'CHECK_IN' : i % 5 === 1 ? 'CHECK_OUT' : 'PRICE_CHANGED',
+    actor: { id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN' },
+    entityType: i % 2 === 0 ? 'BOOKING' : 'PRICING',
+    entityId: i % 2 === 0 ? `b-${(i % 50) + 1}` : `pr-${(i % 50) + 1}`,
+    beforeValues: { status: 'OLD' },
+    afterValues: { status: 'NEW' },
+    ipAddress: '192.168.1.100',
+    userAgent: 'Mozilla/5.0',
+    timestamp: '2025-05-18T10:00:00Z',
+    hotelId: `h-${(i % 4) + 101}`
+  })),
   userActivity: {
-    loginLogs: [
-      { timestamp: '2025-05-18T08:00:00Z', ipAddress: '192.168.1.100', success: true, failureReason: undefined },
-      { timestamp: '2025-05-17T08:00:00Z', ipAddress: '192.168.1.100', success: true, failureReason: undefined },
-      { timestamp: '2025-05-16T08:00:00Z', ipAddress: '192.168.1.101', success: false, failureReason: 'Invalid password' },
-    ],
-    logoutLogs: [
-      { timestamp: '2025-05-18T18:00:00Z' },
-      { timestamp: '2025-05-17T18:00:00Z' },
-    ],
+    loginLogs: Array.from({ length: 50 }, (_, i) => ({
+      timestamp: '2025-05-18T08:00:00Z',
+      ipAddress: '192.168.1.100',
+      success: true,
+      failureReason: undefined
+    })),
+    logoutLogs: Array.from({ length: 50 }, (_, i) => ({
+      timestamp: '2025-05-18T18:00:00Z'
+    })),
     permissionChanges: [
       { timestamp: '2025-05-12T13:00:00Z', changedBy: 'admin@luxestay.com', oldPermissions: ['bookings:view'], newPermissions: ['bookings:view', 'bookings:edit'] },
     ],
@@ -499,10 +576,7 @@ export const phase2AuditMockData = {
       { timestamp: '2025-05-12T13:00:00Z', changedBy: 'admin@luxestay.com', oldRole: 'STAFF', newRole: 'HOTEL_MANAGER' },
     ],
   },
-  // Feature flags (mock - would be from backend in real implementation)
-  featureFlags: {
-    AUDIT_LOGS_ENABLED: false,
-  },
+  featureFlags: { AUDIT_LOGS_ENABLED: true },
 };
 
 // ============================================================================
@@ -510,17 +584,523 @@ export const phase2AuditMockData = {
 // ============================================================================
 
 export const phase2ApprovalMockData = {
-  approvalRequests: [
-    { id: 'apr-1', action: 'REFUND', requester: { id: 's-2', email: 'sarah@luxestay.com', role: 'HOTEL_MANAGER' }, approvers: [{ id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN', status: 'PENDING', approvedAt: undefined, comments: undefined }], status: 'PENDING', entityType: 'BOOKING', entityId: 'b-4', requestData: { amount: 500, reason: 'CANCELLATION' }, createdAt: '2025-05-20T10:00:00Z', expiresAt: '2025-05-27T10:00:00Z', comments: undefined, hotelId: 'h-101' },
-    { id: 'apr-2', action: 'REFUND', requester: { id: 's-3', email: 'priya@luxestay.com', role: 'FRONT_DESK' }, approvers: [{ id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN', status: 'APPROVED', approvedAt: '2025-05-19T14:00:00Z', comments: 'Approved' }], status: 'APPROVED', entityType: 'BOOKING', entityId: 'b-5', requestData: { amount: 300, reason: 'NO_SHOW' }, createdAt: '2025-05-19T12:00:00Z', expiresAt: undefined, comments: undefined, hotelId: 'h-101' },
-    { id: 'apr-3', action: 'CANCELLATION', requester: { id: 's-2', email: 'sarah@luxestay.com', role: 'HOTEL_MANAGER' }, approvers: [{ id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN', status: 'REJECTED', approvedAt: undefined, comments: 'Insufficient reason' }], status: 'REJECTED', entityType: 'BOOKING', entityId: 'b-6', requestData: { bookingId: 'b-6' }, createdAt: '2025-05-18T09:00:00Z', expiresAt: undefined, comments: 'Insufficient reason', hotelId: 'h-101' },
-  ],
+  approvalRequests: Array.from({ length: 50 }, (_, i) => ({
+    id: `apr-${i + 1}`,
+    action: i % 2 === 0 ? 'REFUND' : 'CANCELLATION',
+    requester: { id: `s-${(i % 5) + 2}`, email: 'staff@luxestay.com', role: 'HOTEL_MANAGER' },
+    approvers: [{ id: 's-1', email: 'admin@luxestay.com', role: 'HOTEL_ADMIN', status: i % 3 === 0 ? 'PENDING' : 'APPROVED', approvedAt: undefined, comments: undefined }],
+    status: i % 3 === 0 ? 'PENDING' : i % 3 === 1 ? 'APPROVED' : 'REJECTED',
+    entityType: 'BOOKING',
+    entityId: `b-${(i % 50) + 1}`,
+    requestData: { amount: 5000, reason: 'Guest Dispute' },
+    createdAt: '2025-05-20T10:00:00Z',
+    expiresAt: '2025-05-27T10:00:00Z',
+    comments: undefined,
+    hotelId: `h-${(i % 4) + 101}`
+  })),
   approvalChains: [
-    { id: 'chain-1', action: 'REFUND', thresholds: [{ amount: 10000, approverRoles: ['MANAGER', 'HOTEL_ADMIN'] }, { amount: 50000, approverRoles: ['HOTEL_ADMIN'] }], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+    { id: 'chain-1', action: 'REFUND', thresholds: [{ amount: 10000, approverRoles: ['MANAGER', 'HOTEL_ADMIN'] }], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
     { id: 'chain-2', action: 'CANCELLATION', thresholds: [{ amount: 0, approverRoles: ['HOTEL_ADMIN'] }], isActive: true, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+    ...Array.from({ length: 13 }, (_, i) => ({
+        id: `chain-${i+3}`,
+        action: 'DISCOUNT_OVERRIDE',
+        thresholds: [{ amount: 1000, approverRoles: ['MANAGER'] }],
+        isActive: true,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
+    }))
   ],
-  // Feature flags (mock - would be from backend in real implementation)
-  featureFlags: {
-    APPROVAL_WORKFLOWS_ENABLED: false,
-  },
+  featureFlags: { APPROVAL_WORKFLOWS_ENABLED: true },
+};
+
+// ============================================================================
+// TENANT & SUBSCRIPTION (ENTERPRISE MULTI-TENANT)
+// ============================================================================
+
+export const tenantSubscriptionMockData = {
+  tenants: Array.from({ length: 50 }, (_, i) => ({
+    id: `t-${i + 1}`,
+    name: `Enterprise Group ${i + 1}`,
+    status: i % 10 === 0 ? 'SUSPENDED' : 'ACTIVE',
+    subscriptionId: `sub-${i + 1}`,
+    createdAt: '2024-01-01T00:00:00Z',
+    contactEmail: `admin@group${i + 1}.com`,
+    contactPhone: '+91 832 555 0000',
+    billingAddress: 'Corporate Towers, BLR'
+  })),
+  plans: [
+    { id: 'plan-1', name: 'Starter', tier: 'STARTER', maxHotels: 1, maxRooms: 50, maxUsers: 5, priceMonthly: 9900, priceYearly: 99000, currency: 'INR', features: ['bookings', 'rooms', 'housekeeping', 'basic_reports'] },
+    { id: 'plan-2', name: 'Professional', tier: 'PROFESSIONAL', maxHotels: 10, maxRooms: 500, maxUsers: 50, priceMonthly: 29900, priceYearly: 299000, currency: 'INR', features: ['bookings', 'rooms', 'housekeeping', 'maintenance', 'pricing', 'crm', 'advanced_reports', 'api_access'] },
+    { id: 'plan-3', name: 'Enterprise', tier: 'ENTERPRISE', maxHotels: 999, maxRooms: 9999, maxUsers: 999, priceMonthly: 99900, priceYearly: 999000, currency: 'INR', features: ['bookings', 'rooms', 'housekeeping', 'maintenance', 'pricing', 'crm', 'advanced_reports', 'api_access', 'channel_manager', 'revenue_management', 'white_label', 'sso', 'audit_logs', 'approvals', 'communication_automation'] },
+  ],
+  subscriptions: Array.from({ length: 50 }, (_, i) => ({
+    id: `sub-${i + 1}`,
+    tenantId: `t-${i + 1}`,
+    planId: i % 3 === 0 ? 'plan-3' : 'plan-2',
+    status: 'ACTIVE',
+    billingCycle: 'YEARLY',
+    currentPeriodStart: '2025-01-01T00:00:00Z',
+    currentPeriodEnd: '2026-01-01T00:00:00Z',
+    autoRenew: true,
+    paymentMethod: 'CARD',
+    lastPaymentDate: '2025-01-01T00:00:00Z',
+    nextBillingDate: '2026-01-01T00:00:00Z',
+    amount: 999000,
+    currency: 'INR'
+  })),
+  featureEntitlements: Array.from({ length: 100 }, (_, i) => ({
+    tenantId: `t-${Math.floor(i / 2) + 1}`,
+    feature: i % 2 === 0 ? 'bookings' : 'audit_logs',
+    enabled: true,
+    limit: null
+  })),
+  billingHistory: Array.from({ length: 50 }, (_, i) => ({
+    id: `bill-${i + 1}`,
+    tenantId: `t-${(i % 10) + 1}`,
+    subscriptionId: `sub-${(i % 10) + 1}`,
+    invoiceNumber: `SUB-INV-2025-${i + 1}`,
+    amount: 999000,
+    currency: 'INR',
+    status: 'PAID',
+    billingDate: '2025-01-01T00:00:00Z',
+    paidDate: '2025-01-01T10:00:00Z',
+    paymentMethod: 'CARD',
+    description: 'Annual Enterprise Subscription'
+  })),
+};
+
+// ============================================================================
+// PERMISSION SYSTEM (RBAC + USER OVERRIDES)
+// ============================================================================
+
+export const permissionSystemMockData = {
+  permissions: [
+    { id: 'perm-1', key: 'bookings:view', name: 'View Bookings', category: 'BOOKINGS', description: 'View all bookings' },
+    { id: 'perm-2', key: 'bookings:create', name: 'Create Bookings', category: 'BOOKINGS', description: 'Create new bookings' },
+    { id: 'perm-3', key: 'bookings:edit', name: 'Edit Bookings', category: 'BOOKINGS', description: 'Modify existing bookings' },
+    { id: 'perm-4', key: 'bookings:cancel', name: 'Cancel Bookings', category: 'BOOKINGS', description: 'Cancel bookings' },
+    { id: 'perm-5', key: 'rooms:view', name: 'View Rooms', category: 'ROOMS', description: 'View room inventory' },
+    ...Array.from({ length: 16 }, (_, i) => ({
+        id: `perm-${i+6}`,
+        key: `feat:${i}:access`,
+        name: `Access Feature ${i}`,
+        category: 'SYSTEM',
+        description: `Manage system feature ${i}`
+    }))
+  ],
+  rolePermissions: [
+    { roleId: 'HOTEL_ADMIN', permissions: ['bookings:view', 'bookings:create', 'bookings:edit', 'bookings:cancel', 'rooms:view', 'rooms:manage', 'pricing:view', 'pricing:edit', 'guests:view', 'guests:edit', 'finance:view', 'finance:manage', 'reports:view', 'reports:export', 'settings:view', 'settings:edit', 'users:manage', 'housekeeping:view', 'housekeeping:manage', 'maintenance:view', 'maintenance:manage'] },
+    { roleId: 'HOTEL_MANAGER', permissions: ['bookings:view', 'bookings:create', 'bookings:edit', 'bookings:cancel', 'rooms:view', 'rooms:manage', 'pricing:view', 'pricing:edit', 'guests:view', 'guests:edit', 'finance:view', 'finance:manage', 'reports:view', 'reports:export', 'housekeeping:view', 'housekeeping:manage', 'maintenance:view', 'maintenance:manage'] },
+    ...Array.from({ length: 13 }, (_, i) => ({
+        roleId: `CUSTOM_ROLE_${i}`,
+        permissions: ['bookings:view', 'rooms:view']
+    }))
+  ],
+  userPermissionOverrides: Array.from({ length: 50 }, (_, i) => ({
+    userId: `s-${(i % 30) + 1}`,
+    permission: 'bookings:cancel',
+    granted: true,
+    grantedBy: 's-1',
+    grantedAt: '2025-05-01T00:00:00Z',
+    reason: 'Temporary override for weekend shift'
+  })),
+};
+
+// ============================================================================
+// CANCELLATION / NO-SHOW / REFUND POLICIES
+// ============================================================================
+
+export const cancellationPolicyMockData = {
+  cancellationPolicies: Array.from({ length: 20 }, (_, i) => ({
+    id: `cp-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    name: i % 2 === 0 ? 'Flexible' : 'Strict Non-Refundable',
+    description: 'Policy governing booking cancellations.',
+    rules: [{ hoursBeforeCheckIn: 24, penaltyType: 'PERCENTAGE', penaltyValue: i % 2 === 0 ? 0 : 100 }],
+    isDefault: i < 4
+  })),
+  noShowPolicies: Array.from({ length: 20 }, (_, i) => ({
+    id: `ns-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    name: 'Standard No-Show',
+    description: 'Policy for no-show guests.',
+    penaltyType: 'PERCENTAGE',
+    penaltyValue: 100,
+    gracePeriodHours: 2,
+    isDefault: true
+  })),
+  refundRules: Array.from({ length: 20 }, (_, i) => ({
+    id: `rr-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    reason: i % 2 === 0 ? 'CANCELLATION' : 'NO_SHOW',
+    processingDays: 7,
+    refundMethod: 'ORIGINAL_PAYMENT',
+    deductionType: 'FIXED',
+    deductionValue: 0,
+    requiresApproval: i % 2 !== 0,
+    approvalThreshold: 1000
+  })),
+  refundCalculations: Array.from({ length: 50 }, (_, i) => ({
+    bookingId: `b-${i + 1}`,
+    bookingAmount: 5000,
+    cancellationPolicyId: `cp-${(i % 4) + 1}`,
+    hoursBeforeCheckIn: 48,
+    penaltyAmount: 0,
+    refundAmount: 5000,
+    processingFee: 0,
+    netRefund: 5000
+  })),
+};
+
+// ============================================================================
+// TAX CONFIGURATION (GST / HSN CODES)
+// ============================================================================
+
+export const taxConfigurationMockData = {
+  taxRules: Array.from({ length: 20 }, (_, i) => ({
+    id: `tax-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    taxName: i % 2 === 0 ? 'GST' : 'Service Charge',
+    taxType: 'GST',
+    rate: i % 2 === 0 ? 18 : 5,
+    isInclusive: false,
+    applicableOn: 'ROOM_CHARGES',
+    hsnCode: '9963',
+    isActive: true
+  })),
+  hsnCodes: [
+    { code: '9963', description: 'Accommodation services', category: 'ACCOMMODATION', gstRate: 18 },
+    { code: '9997', description: 'Technical services', category: 'SERVICES', gstRate: 18 },
+    { code: '9996', description: 'Catering', category: 'FOOD_BEVERAGE', gstRate: 18 },
+    ...Array.from({ length: 12 }, (_, i) => ({
+        code: `900${i}`,
+        description: `HSN Sub-code ${i}`,
+        category: 'OTHERS',
+        gstRate: 12
+    }))
+  ],
+  gstConfiguration: Array.from({ length: 15 }, (_, i) => ({
+    hotelId: `h-${101 + i}`,
+    gstin: `18AABCT1234H${i}Z0`,
+    legalName: `LuxeStay Hotel Unit ${i}`,
+    address: 'Regional Office',
+    state: 'Goa',
+    stateCode: '30',
+    panNumber: 'AABCT1234H',
+    isCompositionScheme: false
+  })),
+};
+
+// ============================================================================
+// PROMOTIONS & RATE OVERRIDES
+// ============================================================================
+
+export const promotionsRateOverridesMockData = {
+  promoCodes: Array.from({ length: 50 }, (_, i) => ({
+    id: `promo-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    code: `PROMO${i + 1}`,
+    name: `Promotion ${i + 1}`,
+    discountType: 'PERCENTAGE',
+    discountValue: 10 + (i % 20),
+    validFrom: '2025-01-01',
+    validTo: '2025-12-31',
+    minNights: 1,
+    maxNights: 7,
+    minAmount: 1000,
+    maxUsage: 100,
+    usageCount: i % 50,
+    isActive: true,
+    applicableRoomTypes: ['rt-1', 'rt-2'],
+    blackoutDates: []
+  })),
+  seasonalPricing: Array.from({ length: 20 }, (_, i) => ({
+    id: `sp-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    name: `Season ${i + 1}`,
+    startDate: '2025-11-01',
+    endDate: '2025-12-31',
+    priceMultiplier: 1.2,
+    applicableRoomTypes: ['rt-1'],
+    isActive: true
+  })),
+  corporateRates: Array.from({ length: 20 }, (_, i) => ({
+    id: `cr-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    companyName: `Corporate ${i + 1}`,
+    contactPerson: 'Manager',
+    contactEmail: `corp${i + 1}@business.com`,
+    discountType: 'PERCENTAGE',
+    discountValue: 20,
+    validFrom: '2025-01-01',
+    validTo: '2025-12-31',
+    applicableRoomTypes: ['rt-1'],
+    isActive: true
+  })),
+  blackoutDates: Array.from({ length: 20 }, (_, i) => ({
+    id: `bd-${i + 1}`,
+    // Fix: Using the loop index 'i' instead of the undefined 'idNum'.
+    hotelId: `h-${(i % 4) + 101}`,
+    date: `2025-12-${(i % 31) + 1}`,
+    reason: 'Peak Season Blockout',
+    affectsPromoCodes: true,
+    affectsSeasonalPricing: false
+  })),
+};
+
+// ============================================================================
+// CHANNEL MANAGER / OTA INTEGRATION
+// ============================================================================
+
+export const channelManagerMockData = {
+  otaConnections: Array.from({ length: 20 }, (_, i) => ({
+    id: `ota-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    otaName: i % 2 === 0 ? 'Booking.com' : 'Expedia',
+    otaCode: i % 2 === 0 ? 'BOOKING_COM' : 'EXPEDIA',
+    status: 'CONNECTED',
+    apiKey: 'key-***',
+    lastSyncAt: '2025-05-20T10:00:00Z',
+    syncFrequency: 'REAL_TIME',
+    roomsMapped: 3,
+    isActive: true,
+    connectionDate: '2025-01-01T00:00:00Z'
+  })),
+  syncLogs: Array.from({ length: 50 }, (_, i) => ({
+    id: `sync-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    otaConnectionId: `ota-${(i % 10) + 1}`,
+    syncType: 'INVENTORY',
+    direction: 'PUSH',
+    status: 'SUCCESS',
+    recordsProcessed: 10,
+    recordsFailed: 0,
+    startedAt: '2025-05-20T10:00:00Z',
+    completedAt: '2025-05-20T10:00:05Z',
+    errorMessage: null
+  })),
+  conflictResolution: Array.from({ length: 20 }, (_, i) => ({
+    id: `conf-${i + 1}`,
+    hotelId: `h-101`,
+    otaConnectionId: `ota-1`,
+    conflictType: 'OVERBOOKING',
+    roomTypeId: 'rt-1',
+    date: '2025-06-15',
+    pmsAvailability: 1,
+    otaAvailability: 2,
+    status: 'RESOLVED',
+    resolvedBy: 's-1',
+    resolvedAt: '2025-05-20T11:00:00Z',
+    resolution: 'Automatic sync adjustment'
+  })),
+  roomMapping: Array.from({ length: 30 }, (_, i) => ({
+    id: `map-${i + 1}`,
+    hotelId: `h-101`,
+    otaConnectionId: `ota-${(i % 5) + 1}`,
+    pmsRoomTypeId: `rt-${(i % 3) + 1}`,
+    pmsRoomTypeName: 'PMS Room',
+    otaRoomTypeId: `ota-rt-${i}`,
+    otaRoomTypeName: 'OTA Room',
+    isActive: true
+  })),
+};
+
+// ============================================================================
+// STAFF OPERATIONS (SHIFTS & TASK ASSIGNMENTS)
+// ============================================================================
+
+export const staffOperationsMockData = {
+  shifts: Array.from({ length: 50 }, (_, i) => ({
+    id: `shift-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    staffId: `s-${(i % 15) + 1}`,
+    staffName: `Staff Member ${i + 1}`,
+    role: 'FRONT_DESK',
+    shiftType: i % 2 === 0 ? 'MORNING' : 'EVENING',
+    startTime: '2025-05-20T06:00:00Z',
+    endTime: '2025-05-20T14:00:00Z',
+    status: 'COMPLETED',
+    checkInTime: '2025-05-20T05:55:00Z',
+    checkOutTime: '2025-05-20T14:05:00Z'
+  })),
+  taskAssignments: Array.from({ length: 50 }, (_, i) => ({
+    id: `task-${i + 1}`,
+    hotelId: `h-101`,
+    taskType: i % 2 === 0 ? 'ROOM_CLEANING' : 'MAINTENANCE',
+    assignedTo: `s-${(i % 5) + 4}`,
+    assignedBy: 's-2',
+    roomId: `r-1${(i % 20) + 1}`,
+    roomNumber: `1${(i % 20) + 1}`,
+    priority: 'HIGH',
+    status: i % 4 === 0 ? 'PENDING' : 'COMPLETED',
+    dueDate: '2025-05-20T12:00:00Z',
+    completedAt: i % 4 !== 0 ? '2025-05-20T11:30:00Z' : null,
+    notes: 'Standard task.',
+    createdAt: '2025-05-20T08:00:00Z'
+  })),
+  taskTemplates: Array.from({ length: 20 }, (_, i) => ({
+    id: `tt-${i + 1}`,
+    name: `Template ${i + 1}`,
+    taskType: 'ROOM_CLEANING',
+    estimatedDuration: 30,
+    checklist: ['Step 1', 'Step 2'],
+    isActive: true
+  })),
+};
+
+// ============================================================================
+// DOCUMENTS & ATTACHMENTS (50+ RECORDS)
+// ============================================================================
+
+export const documentsAttachmentsMockData = {
+  guestDocuments: Array.from({ length: 50 }, (_, i) => ({
+    id: `doc-${i + 1}`,
+    guestId: `g-${(i % 50) + 1}`,
+    bookingId: `b-${(i % 50) + 1}`,
+    documentType: 'ID_PROOF',
+    documentName: 'Govt ID',
+    fileName: `doc_${i + 1}.pdf`,
+    fileUrl: `/docs/guest_${i + 1}.pdf`,
+    fileSize: 200000,
+    uploadedBy: 's-3',
+    uploadedAt: '2025-05-18T09:00:00Z',
+    verifiedBy: 's-2',
+    verifiedAt: '2025-05-18T09:15:00Z',
+    status: 'VERIFIED'
+  })),
+  bookingAttachments: Array.from({ length: 50 }, (_, i) => ({
+    id: `att-${i + 1}`,
+    bookingId: `b-${(i % 50) + 1}`,
+    attachmentType: 'SPECIAL_REQUEST',
+    fileName: `req_${i + 1}.txt`,
+    fileUrl: `/docs/req_${i + 1}.txt`,
+    fileSize: 1000,
+    uploadedBy: 's-3',
+    uploadedAt: '2025-05-10T10:00:00Z',
+    description: 'Additional info'
+  })),
+  invoiceDocuments: Array.from({ length: 50 }, (_, i) => ({
+    id: `inv-doc-${i + 1}`,
+    invoiceId: `inv-${(i % 50) + 1}`,
+    invoiceNumber: `INV-LS-99${(i % 50) + 1}`,
+    documentType: 'INVOICE_PDF',
+    fileName: `inv_${i + 1}.pdf`,
+    fileUrl: `/docs/inv_${i + 1}.pdf`,
+    fileSize: 300000,
+    generatedAt: '2025-05-23T10:00:00Z',
+    sentToGuest: true,
+    sentAt: '2025-05-23T10:05:00Z'
+  })),
+  documentCategories: [
+    { id: 'cat-1', name: 'ID Proofs', description: 'Govt IDs', requiredForCheckIn: true, retentionDays: 365 },
+    { id: 'cat-2', name: 'Attachments', description: 'General docs', requiredForCheckIn: false, retentionDays: 180 },
+    ...Array.from({ length: 13 }, (_, i) => ({
+        id: `cat-${i+3}`,
+        name: `Custom Cat ${i}`,
+        description: 'Auto-generated',
+        requiredForCheckIn: false,
+        retentionDays: 30
+    }))
+  ],
+};
+
+// ============================================================================
+// SYSTEM CONFIG
+// ============================================================================
+
+export const systemConfigMockData = {
+  overbookingRules: Array.from({ length: 20 }, (_, i) => ({
+    id: `ob-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    roomTypeId: `rt-${(i % 6) + 1}`,
+    allowOverbooking: true,
+    overbookingPercentage: 5,
+    maxOverbookings: 1,
+    isActive: true
+  })),
+  autoRoomAssignment: Array.from({ length: 20 }, (_, i) => ({
+    id: `ara-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    enabled: true,
+    assignmentStrategy: 'SEQUENTIAL',
+    preferredFloors: [1],
+    avoidFloors: [],
+    considerGuestPreferences: true,
+    considerRoomStatus: true
+  })),
+  lateCheckoutFees: Array.from({ length: 30 }, (_, i) => ({
+    id: `lcf-${i + 1}`,
+    hotelId: `h-${(i % 4) + 101}`,
+    hoursLate: (i % 4) + 1,
+    feeType: 'PERCENTAGE',
+    feeAmount: 25,
+    isActive: true
+  })),
+  featureToggles: Array.from({ length: 40 }, (_, i) => ({
+    id: `ft-${i + 1}`,
+    tenantId: 't-1',
+    feature: `FEATURE_${i}`,
+    enabled: i % 2 === 0,
+    description: `System Feature ${i}`
+  })),
+  emailTemplates: Array.from({ length: 20 }, (_, i) => ({
+    id: `et-${i + 1}`,
+    hotelId: `h-101`,
+    templateType: 'BOOKING_CONFIRMATION',
+    subject: 'Confirmation',
+    body: 'Your booking is confirmed.',
+    isActive: true
+  })),
+};
+
+// ============================================================================
+// REPORTS & EXPORTS
+// ============================================================================
+
+export const reportsExportMockData = {
+  reportCatalog: Array.from({ length: 20 }, (_, i) => ({
+    id: `rpt-${i + 1}`,
+    name: `Report ${i + 1}`,
+    category: 'FINANCE',
+    description: 'Detailed enterprise report.',
+    parameters: ['hotelId'],
+    outputFormats: ['PDF', 'CSV'],
+    scheduleSupported: true,
+    accessRoles: ['HOTEL_ADMIN']
+  })),
+  exportTypes: Array.from({ length: 20 }, (_, i) => ({
+    id: `exp-${i + 1}`,
+    name: `Export ${i + 1}`,
+    description: 'Data export tool.',
+    dataSource: 'BOOKINGS',
+    columns: ['id'],
+    formats: ['CSV'],
+    maxRecords: 1000
+  })),
+  scheduledReports: Array.from({ length: 20 }, (_, i) => ({
+    id: `sched-${i + 1}`,
+    hotelId: 'h-101',
+    reportId: `rpt-${(i % 5) + 1}`,
+    reportName: 'Daily Sync',
+    frequency: 'DAILY',
+    schedule: '08:00',
+    recipients: ['admin@luxestay.com'],
+    format: 'PDF',
+    isActive: true,
+    lastRunAt: '2025-05-20T08:00:00Z',
+    nextRunAt: '2025-05-21T08:00:00Z'
+  })),
+  reportHistory: Array.from({ length: 50 }, (_, i) => ({
+    id: `hist-${i + 1}`,
+    hotelId: 'h-101',
+    reportId: 'rpt-1',
+    reportName: 'Revenue Report',
+    generatedBy: 's-1',
+    generatedAt: '2025-05-20T08:00:00Z',
+    parameters: { hotelId: 'h-101' },
+    format: 'PDF',
+    fileUrl: '/reports/rpt.pdf',
+    fileSize: 500000,
+    status: 'COMPLETED'
+  })),
 };

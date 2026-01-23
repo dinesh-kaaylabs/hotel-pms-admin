@@ -74,13 +74,24 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Rate Plans', path: '/pricing/rate-plans', icon: Tag, permission: 'pricing:edit' },
       { label: 'Pricing Calendar', path: '/pricing/calendar', icon: CalendarDays, permission: 'pricing:view' },
+      { label: 'Promotions', path: '/pricing/promotions', icon: Tag, permission: 'pricing:edit' },
     ]
   },
   { label: 'Payments', path: '/payments', icon: CreditCard, permission: 'payments:view' },
   { label: 'Invoices & GST', path: '/invoices', icon: FileText, permission: 'payments:view', tourId: 'nav-finance' },
   { label: 'Settlements', path: '/settlements', icon: Landmark, permission: 'payments:view' },
   { label: 'Guests', path: '/guests', icon: Users, permission: 'bookings:view' },
-  { label: 'Reports & Analytics', path: '/reports', icon: BarChart3, permission: 'reports:view', tourId: 'nav-reports' },
+  { 
+    label: 'Reports & Analytics', 
+    path: '/reports', 
+    icon: BarChart3, 
+    permission: 'reports:view', 
+    tourId: 'nav-reports',
+    children: [
+      { label: 'Dashboard', path: '/reports', icon: BarChart3, permission: 'reports:view' },
+      { label: 'Export & Schedule', path: '/reports/export', icon: FileText, permission: 'reports:view' },
+    ]
+  },
   { label: 'AI Concierge', path: '/ai-insights', icon: Sparkles, permission: 'dashboard:view' },
   { label: 'Training Hub', path: '/training', icon: GraduationCap, permission: 'dashboard:view' },
   { label: 'User Management', path: '/users', icon: ShieldHalf, permission: 'users:manage' },
@@ -89,7 +100,7 @@ const navItems: NavItem[] = [
 
 export const MainLayout: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/rooms', '/pricing']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/rooms', '/pricing', '/reports']);
   const [globalSearch, setGlobalSearch] = useState('');
   const { user, logout } = useAuth();
   const { theme } = useBrandTheme();

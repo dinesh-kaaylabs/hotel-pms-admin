@@ -14,7 +14,17 @@ import {
   checkinCheckoutMockData,
   phase2CommunicationMockData,
   phase2AuditMockData,
-  phase2ApprovalMockData
+  phase2ApprovalMockData,
+  tenantSubscriptionMockData,
+  permissionSystemMockData,
+  cancellationPolicyMockData,
+  taxConfigurationMockData,
+  promotionsRateOverridesMockData,
+  channelManagerMockData,
+  staffOperationsMockData,
+  documentsAttachmentsMockData,
+  systemConfigMockData,
+  reportsExportMockData
 } from './data/mock.data';
 
 // Deterministic counters for mock data (stable across reloads)
@@ -1470,6 +1480,604 @@ export const handlers = [
             message: 'Request rejected',
             request: updatedRequest,
           },
+        },
+      },
+    });
+  }),
+
+  // =========================================================================
+  // TENANT & SUBSCRIPTION
+  // =========================================================================
+
+  graphql.query('GetTenantInfo', async ({ request }) => {
+    await delay(200);
+    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
+    const tenant = tenantSubscriptionMockData.tenants.find(t => t.id === tenantId) || tenantSubscriptionMockData.tenants[0];
+    
+    return HttpResponse.json({
+      data: {
+        tenant,
+      },
+    });
+  }),
+
+  graphql.query('GetSubscriptionInfo', async ({ request }) => {
+    await delay(200);
+    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
+    const subscription = tenantSubscriptionMockData.subscriptions.find(s => s.tenantId === tenantId);
+    const plan = subscription ? tenantSubscriptionMockData.plans.find(p => p.id === subscription.planId) : null;
+    
+    return HttpResponse.json({
+      data: {
+        subscription: subscription ? { ...subscription, plan } : null,
+      },
+    });
+  }),
+
+  graphql.query('GetFeatureEntitlements', async ({ request }) => {
+    await delay(200);
+    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
+    const entitlements = tenantSubscriptionMockData.featureEntitlements.filter(e => e.tenantId === tenantId);
+    
+    return HttpResponse.json({
+      data: {
+        featureEntitlements: entitlements,
+      },
+    });
+  }),
+
+  graphql.query('GetBillingHistory', async ({ request }) => {
+    await delay(200);
+    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
+    const history = tenantSubscriptionMockData.billingHistory.filter(b => b.tenantId === tenantId);
+    
+    return HttpResponse.json({
+      data: {
+        billingHistory: history,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // PERMISSION SYSTEM
+  // =========================================================================
+
+  graphql.query('GetPermissions', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        permissions: permissionSystemMockData.permissions,
+      },
+    });
+  }),
+
+  graphql.query('GetRolePermissions', async ({ variables }) => {
+    await delay(200);
+    const { roleId } = variables as any;
+    const rolePerms = permissionSystemMockData.rolePermissions.find(rp => rp.roleId === roleId);
+    
+    return HttpResponse.json({
+      data: {
+        rolePermissions: rolePerms || { roleId, permissions: [] },
+      },
+    });
+  }),
+
+  graphql.query('GetUserPermissionOverrides', async ({ variables }) => {
+    await delay(200);
+    const { userId } = variables as any;
+    const overrides = permissionSystemMockData.userPermissionOverrides.filter(o => o.userId === userId);
+    
+    return HttpResponse.json({
+      data: {
+        userPermissionOverrides: overrides,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // CANCELLATION / NO-SHOW / REFUND POLICIES
+  // =========================================================================
+
+  graphql.query('GetCancellationPolicies', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const policies = cancellationPolicyMockData.cancellationPolicies.filter(p => !hotelId || p.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        cancellationPolicies: policies,
+      },
+    });
+  }),
+
+  graphql.query('GetNoShowPolicies', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const policies = cancellationPolicyMockData.noShowPolicies.filter(p => !hotelId || p.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        noShowPolicies: policies,
+      },
+    });
+  }),
+
+  graphql.query('GetRefundRules', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const rules = cancellationPolicyMockData.refundRules.filter(r => !hotelId || r.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        refundRules: rules,
+      },
+    });
+  }),
+
+  graphql.query('CalculateRefund', async ({ variables }) => {
+    await delay(300);
+    const { bookingId } = variables as any;
+    const calculation = cancellationPolicyMockData.refundCalculations.find(c => c.bookingId === bookingId);
+    
+    return HttpResponse.json({
+      data: {
+        refundCalculation: calculation || null,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // TAX CONFIGURATION
+  // =========================================================================
+
+  graphql.query('GetTaxRules', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const rules = taxConfigurationMockData.taxRules.filter(r => !hotelId || r.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        taxRules: rules,
+      },
+    });
+  }),
+
+  graphql.query('GetHSNCodes', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        hsnCodes: taxConfigurationMockData.hsnCodes,
+      },
+    });
+  }),
+
+  graphql.query('GetGSTConfiguration', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const config = taxConfigurationMockData.gstConfiguration.find(c => c.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        gstConfiguration: config || null,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // PROMOTIONS & RATE OVERRIDES
+  // =========================================================================
+
+  graphql.query('GetPromoCodes', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const promoCodes = promotionsRateOverridesMockData.promoCodes.filter(p => !hotelId || p.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        promoCodes,
+      },
+    });
+  }),
+
+  graphql.query('ValidatePromoCode', async ({ variables }) => {
+    await delay(300);
+    const { code, hotelId } = variables as any;
+    const promo = promotionsRateOverridesMockData.promoCodes.find(p => p.code === code && p.hotelId === hotelId && p.isActive);
+    
+    return HttpResponse.json({
+      data: {
+        promoCode: promo || null,
+        valid: !!promo,
+      },
+    });
+  }),
+
+  graphql.query('GetSeasonalPricing', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const seasonal = promotionsRateOverridesMockData.seasonalPricing.filter(s => !hotelId || s.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        seasonalPricing: seasonal,
+      },
+    });
+  }),
+
+  graphql.query('GetCorporateRates', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const rates = promotionsRateOverridesMockData.corporateRates.filter(r => !hotelId || r.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        corporateRates: rates,
+      },
+    });
+  }),
+
+  graphql.query('GetBlackoutDates', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const dates = promotionsRateOverridesMockData.blackoutDates.filter(d => !hotelId || d.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        blackoutDates: dates,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // CHANNEL MANAGER / OTA INTEGRATION
+  // =========================================================================
+
+  graphql.query('GetOTAConnections', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const connections = channelManagerMockData.otaConnections.filter(c => !hotelId || c.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        otaConnections: connections,
+      },
+    });
+  }),
+
+  graphql.query('GetSyncLogs', async ({ request, variables }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const { otaConnectionId, limit } = variables as any;
+    let logs = channelManagerMockData.syncLogs.filter(l => !hotelId || l.hotelId === hotelId);
+    
+    if (otaConnectionId) {
+      logs = logs.filter(l => l.otaConnectionId === otaConnectionId);
+    }
+    
+    if (limit) {
+      logs = logs.slice(0, limit);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        syncLogs: logs,
+      },
+    });
+  }),
+
+  graphql.query('GetConflictResolution', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const conflicts = channelManagerMockData.conflictResolution.filter(c => !hotelId || c.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        conflicts,
+      },
+    });
+  }),
+
+  graphql.query('GetRoomMapping', async ({ request, variables }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const { otaConnectionId } = variables as any;
+    let mappings = channelManagerMockData.roomMapping.filter(m => !hotelId || m.hotelId === hotelId);
+    
+    if (otaConnectionId) {
+      mappings = mappings.filter(m => m.otaConnectionId === otaConnectionId);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        roomMapping: mappings,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // STAFF OPERATIONS
+  // =========================================================================
+
+  graphql.query('GetShifts', async ({ request, variables }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const { dateFrom, dateTo, staffId } = variables as any;
+    let shifts = staffOperationsMockData.shifts.filter(s => !hotelId || s.hotelId === hotelId);
+    
+    if (staffId) {
+      shifts = shifts.filter(s => s.staffId === staffId);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        shifts,
+      },
+    });
+  }),
+
+  graphql.query('GetTaskAssignments', async ({ request, variables }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const { status, assignedTo } = variables as any;
+    let tasks = staffOperationsMockData.taskAssignments.filter(t => !hotelId || t.hotelId === hotelId);
+    
+    if (status) {
+      tasks = tasks.filter(t => t.status === status);
+    }
+    
+    if (assignedTo) {
+      tasks = tasks.filter(t => t.assignedTo === assignedTo);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        taskAssignments: tasks,
+      },
+    });
+  }),
+
+  graphql.query('GetTaskTemplates', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        taskTemplates: staffOperationsMockData.taskTemplates,
+      },
+    });
+  }),
+
+  graphql.mutation('UpdateTaskStatus', async ({ variables }) => {
+    await delay(300);
+    const { taskId, status } = variables as any;
+    
+    return HttpResponse.json({
+      data: {
+        updateTaskStatus: {
+          success: true,
+          message: 'Task status updated',
+          taskId,
+          status,
+        },
+      },
+    });
+  }),
+
+  // =========================================================================
+  // DOCUMENTS & ATTACHMENTS
+  // =========================================================================
+
+  graphql.query('GetGuestDocuments', async ({ variables }) => {
+    await delay(200);
+    const { guestId, bookingId } = variables as any;
+    let documents = documentsAttachmentsMockData.guestDocuments;
+    
+    if (guestId) {
+      documents = documents.filter(d => d.guestId === guestId);
+    }
+    
+    if (bookingId) {
+      documents = documents.filter(d => d.bookingId === bookingId);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        guestDocuments: documents,
+      },
+    });
+  }),
+
+  graphql.query('GetBookingAttachments', async ({ variables }) => {
+    await delay(200);
+    const { bookingId } = variables as any;
+    const attachments = documentsAttachmentsMockData.bookingAttachments.filter(a => a.bookingId === bookingId);
+    
+    return HttpResponse.json({
+      data: {
+        bookingAttachments: attachments,
+      },
+    });
+  }),
+
+  graphql.query('GetInvoiceDocuments', async ({ variables }) => {
+    await delay(200);
+    const { invoiceId } = variables as any;
+    const documents = documentsAttachmentsMockData.invoiceDocuments.filter(d => d.invoiceId === invoiceId);
+    
+    return HttpResponse.json({
+      data: {
+        invoiceDocuments: documents,
+      },
+    });
+  }),
+
+  graphql.query('GetDocumentCategories', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        documentCategories: documentsAttachmentsMockData.documentCategories,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // SYSTEM CONFIG
+  // =========================================================================
+
+  graphql.query('GetOverbookingRules', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const rules = systemConfigMockData.overbookingRules.filter(r => !hotelId || r.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        overbookingRules: rules,
+      },
+    });
+  }),
+
+  graphql.query('GetAutoRoomAssignment', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const config = systemConfigMockData.autoRoomAssignment.find(c => c.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        autoRoomAssignment: config || null,
+      },
+    });
+  }),
+
+  graphql.query('GetLateCheckoutFees', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const fees = systemConfigMockData.lateCheckoutFees.filter(f => !hotelId || f.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        lateCheckoutFees: fees,
+      },
+    });
+  }),
+
+  graphql.query('GetFeatureToggles', async ({ request }) => {
+    await delay(200);
+    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
+    const toggles = systemConfigMockData.featureToggles.filter(t => t.tenantId === tenantId);
+    
+    return HttpResponse.json({
+      data: {
+        featureToggles: toggles,
+      },
+    });
+  }),
+
+  graphql.query('GetEmailTemplates', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const templates = systemConfigMockData.emailTemplates.filter(t => !hotelId || t.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        emailTemplates: templates,
+      },
+    });
+  }),
+
+  // =========================================================================
+  // REPORTS & EXPORT
+  // =========================================================================
+
+  graphql.query('GetReportCatalog', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        reportCatalog: reportsExportMockData.reportCatalog,
+      },
+    });
+  }),
+
+  graphql.query('GetExportTypes', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        exportTypes: reportsExportMockData.exportTypes,
+      },
+    });
+  }),
+
+  graphql.query('GetScheduledReports', async ({ request }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const scheduled = reportsExportMockData.scheduledReports.filter(s => !hotelId || s.hotelId === hotelId);
+    
+    return HttpResponse.json({
+      data: {
+        scheduledReports: scheduled,
+      },
+    });
+  }),
+
+  graphql.query('GetReportHistory', async ({ request, variables }) => {
+    await delay(200);
+    const hotelId = request.headers.get('X-Hotel-Id');
+    const { limit } = variables as any;
+    let history = reportsExportMockData.reportHistory.filter(h => !hotelId || h.hotelId === hotelId);
+    
+    if (limit) {
+      history = history.slice(0, limit);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        reportHistory: history,
+      },
+    });
+  }),
+
+  graphql.mutation('GenerateReport', async ({ variables }) => {
+    await delay(1000);
+    const { reportId, parameters, format } = variables as any;
+    const report = reportsExportMockData.reportCatalog.find(r => r.id === reportId);
+    
+    if (!report) {
+      return HttpResponse.json({
+        errors: [{ message: 'Report not found', extensions: { code: 'NOT_FOUND' } }],
+      });
+    }
+    
+    return HttpResponse.json({
+      data: {
+        generateReport: {
+          success: true,
+          message: 'Report generated successfully',
+          reportId,
+          fileUrl: `/reports/${reportId}-${Date.now()}.${format.toLowerCase()}`,
+          fileSize: 350000,
+        },
+      },
+    });
+  }),
+
+  graphql.mutation('ExportData', async ({ variables }) => {
+    await delay(800);
+    const { exportTypeId, filters, format } = variables as any;
+    const exportType = reportsExportMockData.exportTypes.find(e => e.id === exportTypeId);
+    
+    if (!exportType) {
+      return HttpResponse.json({
+        errors: [{ message: 'Export type not found', extensions: { code: 'NOT_FOUND' } }],
+      });
+    }
+    
+    return HttpResponse.json({
+      data: {
+        exportData: {
+          success: true,
+          message: 'Data exported successfully',
+          exportTypeId,
+          fileUrl: `/exports/${exportTypeId}-${Date.now()}.${format.toLowerCase()}`,
+          fileSize: 280000,
+          recordCount: 150,
         },
       },
     });

@@ -27,6 +27,11 @@ const ReportsDashboardPage = lazy(() => import('../modules/reports/pages/Reports
 const SettingsPage = lazy(() => import('../modules/settings/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const HotelSettingsPage = lazy(() => import('../modules/settings/pages/HotelSettingsPage').then(m => ({ default: m.HotelSettingsPage })));
 const UsersPage = lazy(() => import('../modules/settings/pages/UsersPage').then(m => ({ default: m.UsersPage })));
+const SubscriptionPage = lazy(() => import('../modules/settings/pages/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })));
+const TaxConfigurationPage = lazy(() => import('../modules/settings/pages/TaxConfigurationPage').then(m => ({ default: m.TaxConfigurationPage })));
+const ChannelManagerPage = lazy(() => import('../modules/settings/pages/ChannelManagerPage').then(m => ({ default: m.ChannelManagerPage })));
+const PromotionsPage = lazy(() => import('../modules/pricing/pages/PromotionsPage').then(m => ({ default: m.PromotionsPage })));
+const ReportsExportPage = lazy(() => import('../modules/reports/pages/ReportsExportPage').then(m => ({ default: m.ReportsExportPage })));
 const AIInsightsPage = lazy(() => import('../modules/ai/AIInsightsPage').then(m => ({ default: m.AIInsightsPage })));
 
 // Phase-2 Wave-1 Modules
@@ -145,6 +150,11 @@ export const AppRoutes: React.FC = () => {
                 <PricingCalendarPage />
               </RequireRole>
             } />
+            <Route path="promotions" element={
+              <RequireRole permission="pricing:edit">
+                <PromotionsPage />
+              </RequireRole>
+            } />
           </Route>
 
           <Route path="/payments" element={
@@ -153,11 +163,18 @@ export const AppRoutes: React.FC = () => {
             </RequireRole>
           } />
 
-          <Route path="/reports" element={
-            <RequireRole permission="reports:view">
-              <ReportsDashboardPage />
-            </RequireRole>
-          } />
+          <Route path="/reports">
+            <Route index element={
+              <RequireRole permission="reports:view">
+                <ReportsDashboardPage />
+              </RequireRole>
+            } />
+            <Route path="export" element={
+              <RequireRole permission="reports:view">
+                <ReportsExportPage />
+              </RequireRole>
+            } />
+          </Route>
 
           <Route path="/training">
             <Route index element={<TrainingHomePage />} />
@@ -186,6 +203,9 @@ export const AppRoutes: React.FC = () => {
                 <UsersPage />
               </RequireRole>
             } />
+            <Route path="subscription" element={<SubscriptionPage />} />
+            <Route path="tax" element={<TaxConfigurationPage />} />
+            <Route path="channel-manager" element={<ChannelManagerPage />} />
             
             {/* Phase-2 Wave-1 Routes */}
             <Route path="phase2">
