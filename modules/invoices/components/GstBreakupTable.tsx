@@ -3,11 +3,15 @@ import React from 'react';
 import { GstBreakup } from '../invoices.types';
 
 interface Props {
-  gst: GstBreakup;
+  gst: GstBreakup | undefined;
   currency: string;
 }
 
 export const GstBreakupTable: React.FC<Props> = ({ gst, currency }) => {
+  if (!gst) {
+    return null;
+  }
+  
   const isIgst = gst.igst > 0;
 
   return (

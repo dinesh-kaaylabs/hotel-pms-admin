@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { graphqlRequest } from '../../api/graphqlRequest';
 import { Invoice, InvoiceFilters } from './invoices.types';
 import { INVOICES_QUERY } from '../../graphql/finance.gql';
