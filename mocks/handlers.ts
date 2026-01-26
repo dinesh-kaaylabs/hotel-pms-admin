@@ -186,7 +186,8 @@ export const handlers = [
       filteredBookings = filteredBookings.filter(b =>
         b.bookingNumber.toLowerCase().includes(searchLower) ||
         b.guestName.toLowerCase().includes(searchLower) ||
-        b.roomNumber.toLowerCase().includes(searchLower)
+        (b.roomNumber || '').toLowerCase().includes(searchLower) ||
+        (b.roomType || '').toLowerCase().includes(searchLower)
       );
     }
 
