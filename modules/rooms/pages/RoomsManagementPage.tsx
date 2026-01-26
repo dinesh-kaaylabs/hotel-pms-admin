@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Plus, Search, Inbox } from 'lucide-react';
-import { useRooms, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
+import { useState, useMemo, useCallback } from 'react';
+import { Plus, Search, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRoomsPaginated, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
 import { Room, RoomType, RoomStatus } from '../rooms.types';
 import { useToast } from '../../../components/ui/Toast';
 import { useCurrency } from '../../../providers/CurrencyProvider';
+import { useHotelStore } from '../../../stores/hotelStore';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../../../utils/errorHandling';
 import { RoomCard } from '../components/RoomCard';
@@ -11,27 +12,45 @@ import { RoomTypeCard } from '../components/RoomTypeCard';
 import { RoomStats } from '../components/RoomStats';
 import { RoomFormModal } from '../components/RoomFormModal';
 import { RoomTypeFormModal } from '../components/RoomTypeFormModal';
-import { useRoomFilters } from '../hooks/useRoomFilters';
 import { useDebounce } from '../hooks/useDebounce';
 import { validateRoomForm, validateRoomTypeForm } from '../utils/validation';
 import { ROOM_STATUS_OPTIONS } from '../rooms.constants';
 import type { RoomFormData as ValidationRoomFormData, RoomTypeFormData as ValidationRoomTypeFormData } from '../utils/validation';
 
+const DEFAULT_PAGE_SIZE = 24; // 4 columns × 6 rows
+
 export default function RoomsManagementPage() {
-  const { data: rooms = [], isLoading: loading } = useRooms();
-  const { data: roomTypes = [] } = useRoomTypes();
+  const { activeHotelId } = useHotelStore();
   const { success, error } = useToast();
   const { format } = useCurrency();
   
-  const createRoomMutation = useCreateRoom();
-  const updateRoomMutation = useUpdateRoom();
-  const deleteRoomMutation = useDeleteRoom();
-  const createRoomTypeMutation = useCreateRoomType();
-  const deleteRoomTypeMutation = useDeleteRoomType();
-
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearchQuery = useDebounce(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState<RoomStatus | 'ALL'>('ALL');
+  
+  // Use paginated query with hotel-specific caching
+  const { data: roomsData, isLoading: loading } = useRoomsPaginated({
+    hotelId: activeHotelId,
+    page,
+    pageSize,
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter !== 'ALL' ? statusFilter : undefined,
+  });
+  
+  const rooms = roomsData?.data || [];
+  const totalCount = roomsData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  
+  const { data: roomTypes = [] } = useRoomTypes(activeHotelId);
+  
+  const createRoomMutation = useCreateRoom(activeHotelId);
+  const updateRoomMutation = useUpdateRoom(activeHotelId);
+  const deleteRoomMutation = useDeleteRoom(activeHotelId);
+  const createRoomTypeMutation = useCreateRoomType(activeHotelId);
+  const deleteRoomTypeMutation = useDeleteRoomType(activeHotelId);
+
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showEditRoomModal, setShowEditRoomModal] = useState(false);
   const [showCreateTypeModal, setShowCreateTypeModal] = useState(false);
@@ -39,6 +58,17 @@ export default function RoomsManagementPage() {
   const [activeTab, setActiveTab] = useState<'rooms' | 'types'>('rooms');
   const [deleteRoomConfirm, setDeleteRoomConfirm] = useState<{ isOpen: boolean; roomId: string | null }>({ isOpen: false, roomId: null });
   const [deleteTypeConfirm, setDeleteTypeConfirm] = useState<{ isOpen: boolean; typeId: string | null }>({ isOpen: false, typeId: null });
+  
+  // Reset to page 1 when search or filter changes
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    setPage(1);
+  }, []);
+  
+  const handleStatusFilterChange = useCallback((value: RoomStatus | 'ALL') => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
   
   const [roomFormData, setRoomFormData] = useState<ValidationRoomFormData>({
     roomNumber: '',
@@ -66,8 +96,20 @@ export default function RoomsManagementPage() {
     return new Map(roomTypes.map(t => [t.id, t.name]));
   }, [roomTypes]);
 
-  // Use filters hook with debounced search
-  const { filteredRooms, roomStats } = useRoomFilters(rooms, debouncedSearchQuery, statusFilter);
+  // Calculate stats from all rooms (need to fetch all for accurate stats)
+  // For now, calculate from current page - TODO: Add stats endpoint
+  const roomStats = useMemo(() => {
+    // If we have paginated data, we can't calculate accurate stats from current page alone
+    // This is a limitation - ideally backend should provide stats separately
+    // For now, calculate from visible rooms (will be inaccurate with filters)
+    return {
+      total: totalCount,
+      clean: rooms.filter(r => r.status === 'CLEAN').length,
+      dirty: rooms.filter(r => r.status === 'DIRTY').length,
+      occupied: rooms.filter(r => r.status === 'OCCUPIED').length,
+      maintenance: rooms.filter(r => r.status === 'MAINTENANCE').length,
+    };
+  }, [rooms, totalCount]);
 
   const getRoomTypeName = useCallback((typeId: string) => {
     return roomTypeMap.get(typeId) || 'Unknown';
@@ -294,14 +336,14 @@ export default function RoomsManagementPage() {
                 type="text"
                 placeholder="Search by room number..."
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 aria-label="Search rooms by room number"
               />
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as RoomStatus | 'ALL')}
+              onChange={(e) => handleStatusFilterChange(e.target.value as RoomStatus | 'ALL')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               aria-label="Filter rooms by status"
             >
@@ -326,7 +368,7 @@ export default function RoomsManagementPage() {
             <div className="text-center py-12" role="status" aria-live="polite">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" aria-label="Loading rooms"></div>
             </div>
-          ) : filteredRooms.length === 0 ? (
+          ) : rooms.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200" role="status">
               <Inbox size={48} className="mx-auto text-gray-400 mb-4" aria-hidden="true" />
               <p className="text-gray-600 text-lg font-medium">No rooms found</p>
@@ -337,17 +379,74 @@ export default function RoomsManagementPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {filteredRooms.map((room) => (
-                <RoomCard
-                  key={room.id}
-                  room={room}
-                  roomTypeName={getRoomTypeName(room.roomTypeId)}
-                  onEdit={openEditRoomModal}
-                  onDelete={(id) => setDeleteRoomConfirm({ isOpen: true, roomId: id })}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {rooms.map((room) => (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    roomTypeName={getRoomTypeName(room.roomTypeId)}
+                    onEdit={openEditRoomModal}
+                    onDelete={(id) => setDeleteRoomConfirm({ isOpen: true, roomId: id })}
+                  />
+                ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} rooms
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (page <= 3) {
+                          pageNum = i + 1;
+                        } else if (page >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = page - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              page === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                            aria-label={`Go to page ${pageNum}`}
+                            aria-current={page === pageNum ? 'page' : undefined}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Next page"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

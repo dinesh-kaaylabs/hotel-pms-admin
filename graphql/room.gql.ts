@@ -17,6 +17,29 @@ export const ROOMS_QUERY = `
   }
 `;
 
+export const ROOMS_PAGINATED_QUERY = `
+  query RoomsPaginated($page: Int!, $pageSize: Int!, $search: String, $status: String) {
+    roomsPaginated(page: $page, pageSize: $pageSize, search: $search, status: $status) {
+      data {
+        id
+        hotelId
+        roomNumber
+        roomTypeId
+        status
+        floor
+        lastCleanedAt
+        lastInspectedAt
+        viewType
+        outOfOrderReason
+        maintenanceTicketId
+      }
+      totalCount
+      page
+      pageSize
+    }
+  }
+`;
+
 export const CREATE_ROOM_MUTATION = `
   mutation CreateRoom($input: CreateRoomInput!) {
     createRoom(input: $input) {
