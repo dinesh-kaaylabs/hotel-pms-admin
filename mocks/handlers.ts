@@ -1166,6 +1166,38 @@ export const handlers = [
     })
   ),
 
+  graphql.mutation('GenerateAIPulse', async ({ variables }) => {
+    await delay(800);
+    const { summary } = variables as any;
+    
+    // Generate AI pulse based on summary data
+    let pulse = '';
+    if (summary) {
+      const { totalRevenue, occupancyRate, adr } = summary;
+      
+      if (occupancyRate >= 85) {
+        pulse = `🔥 Exceptional performance! ${occupancyRate}% occupancy with ${adr ? `₹${adr} ADR` : 'strong ADR'}. Revenue trending ${totalRevenue > 500000 ? 'exceptionally high' : 'positively'}.`;
+      } else if (occupancyRate >= 70) {
+        pulse = `✅ Solid operations. ${occupancyRate}% occupancy maintained. ${totalRevenue > 300000 ? 'Revenue targets on track' : 'Revenue within expectations'}.`;
+      } else if (occupancyRate >= 50) {
+        pulse = `⚠️ Moderate occupancy at ${occupancyRate}%. Consider promotional strategies to boost bookings.`;
+      } else {
+        pulse = `📊 Low occupancy detected (${occupancyRate}%). Immediate action recommended: review pricing and marketing campaigns.`;
+      }
+    } else {
+      pulse = 'Operations are within normal parameters.';
+    }
+    
+    return HttpResponse.json({
+      data: {
+        generateAIPulse: {
+          pulse,
+          success: true
+        }
+      }
+    });
+  }),
+
   // =========================================================================
   // SETTINGS & ADMIN
   // =========================================================================

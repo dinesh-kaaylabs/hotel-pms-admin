@@ -31,16 +31,18 @@ import { graphqlRequest } from '../../api/graphqlRequest';
 import { GENERATE_AI_PULSE_MUTATION } from '../../graphql/dashboard.gql';
 import { BookingStatusBadge } from '../bookings/components/BookingStatusBadge';
 import { useRoomInventorySummary } from '../rooms/rooms.api';
+import { useHotelStore } from '../../stores/hotelStore';
 
 export const DashboardPage: React.FC = () => {
   const { format } = useCurrency();
   const today = new Date().toISOString().split('T')[0];
   const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+  const { activeHotelId } = useHotelStore();
   const { data: summary, isLoading: isSummaryLoading, refetch: refetchSummary } = useReportSummary({ startDate: lastWeek, endDate: today });
   const { data: revenueTrend, isLoading: isRevenueLoading } = useRevenueTrend({ startDate: lastWeek, endDate: today });
   const { data: recentBookingsData, isLoading: isBookingsLoading } = useBookings({ page: 1, pageSize: 5 });
-  const { data: roomInventory, isLoading: isInventoryLoading } = useRoomInventorySummary();
+  const { data: roomInventory, isLoading: isInventoryLoading } = useRoomInventorySummary(activeHotelId);
 
   const [aiPulse, setAiPulse] = useState<string>('');
 
@@ -67,7 +69,7 @@ export const DashboardPage: React.FC = () => {
       occupancyRate: summary.occupancyRate,
       adr: summary.adr,
     });
-  }, [summary, generateAIPulseMutation.mutate]);
+  }, [summary, generateAIPulseMutation]);
 
   useEffect(() => {
     if (summary) generateAIPulse();
