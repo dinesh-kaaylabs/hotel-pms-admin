@@ -40,7 +40,7 @@ export default function MaintenanceManagementPage() {
       const response = await fetch('/api/maintenance/issues');
       setIssues(await response.json());
     } catch (error) {
-      console.error('Failed to fetch issues:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function MaintenanceManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create issue:', error);
+      // Error handled silently
     }
   };
 
@@ -78,7 +78,7 @@ export default function MaintenanceManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update issue:', error);
+      // Error handled silently
     }
   };
 
@@ -87,10 +87,10 @@ export default function MaintenanceManagementPage() {
     try {
       const response = await fetch(`/api/maintenance/issues/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchIssues();
+        await         fetchIssues();
       }
     } catch (error) {
-      console.error('Failed to delete issue:', error);
+      // Error handled silently
     }
   };
 
@@ -100,10 +100,10 @@ export default function MaintenanceManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchIssues();
+        await         fetchIssues();
       }
     } catch (error) {
-      console.error('Failed to resolve issue:', error);
+      // Error handled silently
     }
   };
 

@@ -28,13 +28,14 @@ export const RoomsInventoryPage: React.FC = () => {
   const [isAdvancedOpen, setAdvancedOpen] = useState(false);
 
   const { data: inventory, isLoading } = useRoomInventory(filters);
-  const { data: advancedInventory } = useRoomInventoryAdvanced(advancedFilters || {
+  const { data: advancedInventory, isLoading: isAdvancedLoading } = useRoomInventoryAdvanced(advancedFilters || {
     startDate: filters.startDate,
     endDate: filters.endDate,
   });
   const { data: roomTypes } = useRoomTypes();
 
   const displayInventory = advancedFilters ? advancedInventory : inventory;
+  const isLoadingData = advancedFilters ? isAdvancedLoading : isLoading;
 
   const handleAdvancedFilters = () => {
     setAdvancedOpen(true);
@@ -112,7 +113,7 @@ export const RoomsInventoryPage: React.FC = () => {
         </button>
       </div>
 
-      <InventoryTable data={displayInventory || []} isLoading={isLoading} />
+      <InventoryTable data={displayInventory || []} isLoading={isLoadingData} />
 
       <BulkEditDrawer 
         roomTypes={roomTypes || []} 

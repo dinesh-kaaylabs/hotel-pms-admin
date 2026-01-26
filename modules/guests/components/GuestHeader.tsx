@@ -20,7 +20,7 @@ export const GuestHeader: React.FC<{ guest: Guest }> = ({ guest }) => {
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-black text-slate-900">{guest.name}</h1>
-              <GuestBadges tags={guest.tags} />
+              <GuestBadges tags={guest.tags || []} />
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <span className="flex items-center gap-1.5 text-sm text-slate-500 font-medium">
@@ -40,13 +40,13 @@ export const GuestHeader: React.FC<{ guest: Guest }> = ({ guest }) => {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5">
               <Calendar size={12} /> Total Stays
             </p>
-            <p className="text-xl font-black text-slate-900">{guest.totalStays}</p>
+            <p className="text-xl font-black text-slate-900">{guest.totalStays || 0}</p>
           </div>
           <div className="px-6 py-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-center min-w-[140px]">
             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5">
               <DollarSign size={12} /> Revenue
             </p>
-            <p className="text-xl font-black text-indigo-600">{guest.currency} {guest.lifetimeValue.toLocaleString()}</p>
+            <p className="text-xl font-black text-indigo-600">{guest.currency || 'INR'} {(guest.lifetimeValue || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>

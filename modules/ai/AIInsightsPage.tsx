@@ -33,7 +33,6 @@ export const AIInsightsPage: React.FC = () => {
       
       setAiResponse(response.text || 'Unable to generate response.');
     } catch (error) {
-      console.error(error);
       setAiResponse('Error communicating with AI assistant.');
     } finally {
       setAnalyzing(false);

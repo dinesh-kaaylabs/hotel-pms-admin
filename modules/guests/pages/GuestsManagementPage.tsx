@@ -2,11 +2,18 @@ import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, User, Phone, Mail, Star, FileText, Eye } from 'lucide-react';
 import { useGuests, useGuestStays, useGuestNotes, useCreateGuest, useUpdateGuest, useDeleteGuest, useAddGuestNote } from '../guests.api';
 import { Guest, GuestNote, GuestStay } from '../guests.types';
+import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { getErrorMessage } from '../../../utils/errorHandling';
+import { formatDate, formatDateTime } from '../../../utils/date';
 
 export default function GuestsManagementPage() {
   const { data: guests = [], isLoading: loading } = useGuests();
   const { data: guestNotes = [] } = useGuestNotes();
   const { data: guestStays = [] } = useGuestStays();
+  const { success, error } = useToast();
+  const { format } = useCurrency();
   
   const createGuestMutation = useCreateGuest();
   const updateGuestMutation = useUpdateGuest();
@@ -21,6 +28,7 @@ export default function GuestsManagementPage() {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [newNote, setNewNote] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; guestId: string | null }>({ isOpen: false, guestId: null });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -53,10 +61,11 @@ export default function GuestsManagementPage() {
         isVip: formData.isVip,
         privacyLevel: formData.privacyLevel,
       });
+      success('Guest created successfully');
       setShowCreateModal(false);
       resetForm();
-    } catch (error) {
-      console.error('Failed to create guest:', error);
+    } catch (err) {
+      error(getErrorMessage(err, 'create guest'));
     }
   };
 
@@ -81,20 +90,24 @@ export default function GuestsManagementPage() {
           privacyLevel: formData.privacyLevel,
         },
       });
+      success('Guest updated successfully');
       setShowEditModal(false);
       setSelectedGuest(null);
       resetForm();
-    } catch (error) {
-      console.error('Failed to update guest:', error);
+    } catch (err) {
+      error(getErrorMessage(err, 'update guest'));
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this guest?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.guestId) return;
     try {
-      await deleteGuestMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete guest:', error);
+      await deleteGuestMutation.mutateAsync(deleteConfirm.guestId);
+      success('Guest deleted successfully');
+      setDeleteConfirm({ isOpen: false, guestId: null });
+    } catch (err) {
+      error(getErrorMessage(err, 'delete guest'));
+      setDeleteConfirm({ isOpen: false, guestId: null });
     }
   };
 
@@ -105,9 +118,10 @@ export default function GuestsManagementPage() {
         guestId: selectedGuest.id,
         content: newNote,
       });
+      success('Note added successfully');
       setNewNote('');
-    } catch (error) {
-      console.error('Failed to add note:', error);
+    } catch (err) {
+      error(getErrorMessage(err, 'add note'));
     }
   };
 
@@ -303,7 +317,7 @@ export default function GuestsManagementPage() {
                     </div>
                     <div>
                       <p className="text-gray-600">Total Spent</p>
-                      <p className="font-semibold text-gray-900">₹{totalSpent.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">{format(totalSpent)}</p>
                     </div>
                     <div>
                       <p className="text-gray-600">Notes</p>
@@ -334,7 +348,7 @@ export default function GuestsManagementPage() {
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDelete(guest.id)}
+                    onClick={() => setDeleteConfirm({ isOpen: true, guestId: guest.id })}
                     className="px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                   >
                     <Trash2 size={14} />
@@ -564,7 +578,7 @@ export default function GuestsManagementPage() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <p className="text-gray-600">Check-in</p>
-                          <p className="font-medium text-gray-900">{new Date(stay.checkInDate).toLocaleDateString()}</p>
+                          <p className="font-medium text-gray-900">{formatDate(stay.checkInDate)}</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Room</p>
@@ -572,7 +586,7 @@ export default function GuestsManagementPage() {
                         </div>
                         <div>
                           <p className="text-gray-600">Spent</p>
-                          <p className="font-medium text-gray-900">₹{stay.totalSpent.toLocaleString()}</p>
+                          <p className="font-medium text-gray-900">{format(stay.totalSpent)}</p>
                         </div>
                       </div>
                     </div>
@@ -603,7 +617,7 @@ export default function GuestsManagementPage() {
               {getGuestNotes(selectedGuest.id).map(note => (
                 <div key={note.id} className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-900 mb-2">{note.content}</p>
-                  <p className="text-xs text-gray-500">{new Date(note.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">{formatDateTime(note.createdAt)}</p>
                 </div>
               ))}
               {getGuestNotes(selectedGuest.id).length === 0 && (
@@ -640,6 +654,15 @@ export default function GuestsManagementPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Guest"
+        description="Are you sure you want to delete this guest? This action cannot be undone and will remove all guest history."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, guestId: null })}
+        variant="danger"
+      />
     </div>
   );
 }

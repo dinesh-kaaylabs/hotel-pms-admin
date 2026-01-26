@@ -8,3 +8,12 @@ export const DASHBOARD_STATS_QUERY = `
     }
   }
 `;
+
+export const GENERATE_AI_PULSE_MUTATION = `
+  mutation GenerateAIPulse($summary: ReportSummaryInput!) {
+    generateAIPulse(summary: $summary) {
+      pulse
+      success
+    }
+  }
+`;

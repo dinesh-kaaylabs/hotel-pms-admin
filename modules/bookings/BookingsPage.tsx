@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, BookOpen } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, BookOpen, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookings } from './bookings.api';
 import { BookingsTable } from './components/BookingsTable';
@@ -32,14 +32,10 @@ export const BookingsPage: React.FC = () => {
     status: status === 'ALL' ? undefined : status
   });
 
-  // Debug log to check data structure
-  React.useEffect(() => {
-    if (data) {
-      console.log('Bookings data:', data);
-    }
-  }, [data]);
-
-  const hasData = data && data.data && Array.isArray(data.data) && data.data.length > 0;
+  const hasData = useMemo(() => 
+    data && data.data && Array.isArray(data.data) && data.data.length > 0,
+    [data]
+  );
   const canCreate = hasPermission('bookings:update');
 
   const handleReset = () => {
@@ -63,7 +59,8 @@ export const BookingsPage: React.FC = () => {
           {canCreate && (
             <button 
               onClick={handleCreateBooking}
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              aria-label="Create new booking"
             >
               <Plus size={18} /> New Booking
             </button>
@@ -101,14 +98,25 @@ export const BookingsPage: React.FC = () => {
               />
             </div>
           ) : (
-            <BookingsTable 
-              bookings={data?.data || []} 
-              isLoading={isLoading || isPlaceholderData} 
-              onRowClick={(b) => setSelectedBooking(b)} 
-              page={page}
-              pageSize={pageSize}
-              totalCount={data?.totalCount || 0}
-            />
+            <div className="relative">
+              {/* Refetch overlay - shows when data exists but is being refreshed */}
+              {isPlaceholderData && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white px-4 py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-2">
+                    <Loader2 className="animate-spin text-indigo-600" size={16} />
+                    <span className="text-sm font-medium text-slate-700">Refreshing...</span>
+                  </div>
+                </div>
+              )}
+              <BookingsTable 
+                bookings={data?.data || []} 
+                isLoading={false} 
+                onRowClick={(b) => setSelectedBooking(b)} 
+                page={page}
+                pageSize={pageSize}
+                totalCount={data?.totalCount || 0}
+              />
+            </div>
           )}
 
           {/* Pagination Footer */}

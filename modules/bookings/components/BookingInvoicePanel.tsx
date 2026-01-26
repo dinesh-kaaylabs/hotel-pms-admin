@@ -39,15 +39,15 @@ export const BookingInvoicePanel: React.FC<{ bookingId: string }> = ({ bookingId
       <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-slate-500">Net Amount</span>
-          <span className="font-medium">${invoice.netAmount.toFixed(2)}</span>
+          <span className="font-medium">${(invoice.netAmount ?? 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-slate-500">Tax</span>
-          <span className="font-medium">${invoice.taxAmount.toFixed(2)}</span>
+          <span className="font-medium">${(invoice.taxAmount ?? 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm font-bold text-slate-900 pt-1">
           <span>Total</span>
-          <span>${invoice.totalAmount.toFixed(2)}</span>
+          <span>${(invoice.totalAmount ?? 0).toFixed(2)}</span>
         </div>
       </div>
     </div>

@@ -186,7 +186,8 @@ export const handlers = [
       filteredBookings = filteredBookings.filter(b =>
         b.bookingNumber.toLowerCase().includes(searchLower) ||
         b.guestName.toLowerCase().includes(searchLower) ||
-        b.roomNumber.toLowerCase().includes(searchLower)
+        (b.roomNumber || '').toLowerCase().includes(searchLower) ||
+        (b.roomType || '').toLowerCase().includes(searchLower)
       );
     }
 
@@ -251,16 +252,28 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetBookingInvoice', ({ variables }) =>
-    HttpResponse.json({
+  graphql.query('GetBookingInvoice', ({ variables }) => {
+    const invoice = bookingsMockData.invoices[0];
+    const totalAmount = invoice.amount || 0;
+    // Calculate netAmount and taxAmount assuming 18% GST
+    const netAmount = Math.round((totalAmount / 1.18) * 100) / 100;
+    const taxAmount = Math.round((totalAmount - netAmount) * 100) / 100;
+    // Convert issuedAt to issueDate format (YYYY-MM-DD)
+    const issueDate = invoice.issuedAt ? invoice.issuedAt.split('T')[0] : new Date().toISOString().split('T')[0];
+    
+    return HttpResponse.json({
       data: {
         bookingInvoice: {
-          ...bookingsMockData.invoices[0],
-          invoiceNumber: `INV-${variables.bookingId || 'LS-9901'}`
+          invoiceNumber: `INV-${variables.bookingId || 'LS-9901'}`,
+          issueDate,
+          netAmount,
+          taxAmount,
+          totalAmount,
+          pdfUrl: `/invoices/INV-${variables.bookingId || 'LS-9901'}.pdf`
         }
       }
-    })
-  ),
+    });
+  }),
 
   // =========================================================================
   // ROOMS & INVENTORY
@@ -352,13 +365,190 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetRoomInventory', () =>
-    HttpResponse.json({
-      data: {
-        roomInventory: roomsMockData.inventory
+  graphql.query('GetRoomInventory', ({ variables }) => {
+    const startDate = variables?.startDate;
+    const endDate = variables?.endDate;
+    const roomTypeId = variables?.roomTypeId;
+    
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
+    
+    // Generate inventory for the requested date range
+    const generatedInventory: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate inventory for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = roomsMockData.inventory.filter(inv => inv.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(inv => {
+            if (!roomTypeId || inv.roomTypeId === roomTypeId) {
+              generatedInventory.push({
+                id: inv.id,
+                roomTypeId: inv.roomTypeId,
+                date: inv.date,
+                totalRooms: inv.totalRooms,
+                availableRooms: inv.availableRooms
+              });
+            }
+          });
+        } else {
+          // Generate default inventory for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults
+            const template = roomsMockData.inventory.find(inv => inv.roomTypeId === rt.id);
+            const totalRooms = template?.totalRooms || 10;
+            const availableRooms = template?.availableRooms || Math.floor(totalRooms * 0.7);
+            
+            generatedInventory.push({
+              id: `inv-${rt.id}-${dateStr}`,
+              roomTypeId: rt.id,
+              date: dateStr,
+              totalRooms,
+              availableRooms
+            });
+          });
+        }
       }
-    })
-  ),
+    } else {
+      // If no date range provided, return all mock data
+      generatedInventory.push(...roomsMockData.inventory);
+    }
+    
+    // Enrich inventory with status based on availability
+    const enrichedInventory = generatedInventory.map(inv => {
+      let status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' = 'AVAILABLE';
+      
+      if (inv.availableRooms === 0) {
+        status = 'BLOCKED';
+      } else if (inv.availableRooms < inv.totalRooms * 0.2) {
+        status = 'BOOKED'; // Less than 20% available
+      }
+      
+      return {
+        id: inv.id,
+        roomTypeId: inv.roomTypeId,
+        date: inv.date,
+        totalRooms: inv.totalRooms,
+        availableRooms: inv.availableRooms,
+        status
+      };
+    });
+    
+    return HttpResponse.json({
+      data: {
+        roomInventory: enrichedInventory
+      }
+    });
+  }),
+
+  graphql.query('RoomInventoryAdvancedFilters', ({ variables }) => {
+    const filters = variables?.filters || {};
+    const startDate = filters.startDate;
+    const endDate = filters.endDate;
+    const roomTypeId = filters.roomTypeId;
+    
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
+    
+    // Generate inventory for the requested date range
+    const generatedInventory: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate inventory for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = roomsMockData.inventory.filter(inv => inv.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(inv => {
+            if (!roomTypeId || inv.roomTypeId === roomTypeId) {
+              generatedInventory.push({
+                id: inv.id,
+                roomTypeId: inv.roomTypeId,
+                date: inv.date,
+                totalRooms: inv.totalRooms,
+                availableRooms: inv.availableRooms
+              });
+            }
+          });
+        } else {
+          // Generate default inventory for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults
+            const template = roomsMockData.inventory.find(inv => inv.roomTypeId === rt.id);
+            const totalRooms = template?.totalRooms || 10;
+            const availableRooms = template?.availableRooms || Math.floor(totalRooms * 0.7);
+            
+            generatedInventory.push({
+              id: `inv-${rt.id}-${dateStr}`,
+              roomTypeId: rt.id,
+              date: dateStr,
+              totalRooms,
+              availableRooms
+            });
+          });
+        }
+      }
+    } else {
+      // If no date range provided, return all mock data
+      generatedInventory.push(...roomsMockData.inventory);
+    }
+    
+    // Enrich inventory with status based on availability
+    let enrichedInventory = generatedInventory.map(inv => {
+      let status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' = 'AVAILABLE';
+      
+      if (inv.availableRooms === 0) {
+        status = 'BLOCKED';
+      } else if (inv.availableRooms < inv.totalRooms * 0.2) {
+        status = 'BOOKED'; // Less than 20% available
+      }
+      
+      return {
+        id: inv.id,
+        roomTypeId: inv.roomTypeId,
+        date: inv.date,
+        totalRooms: inv.totalRooms,
+        availableRooms: inv.availableRooms,
+        status
+      };
+    });
+    
+    // Filter by status if provided
+    if (filters.status) {
+      enrichedInventory = enrichedInventory.filter(inv => inv.status === filters.status);
+    }
+    
+    // Filter by minimum availability if provided
+    if (filters.minAvailability !== undefined && filters.minAvailability !== null) {
+      enrichedInventory = enrichedInventory.filter(inv => inv.availableRooms >= filters.minAvailability);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        roomInventoryAdvanced: enrichedInventory
+      }
+    });
+  }),
 
   graphql.mutation('BulkUpdateInventory', () =>
     HttpResponse.json({
@@ -372,57 +562,351 @@ export const handlers = [
   // FINANCE & RECONCILIATION
   // =========================================================================
 
-  graphql.query('Invoices', () =>
-    HttpResponse.json({
-      data: {
-        invoices: financeMockData.invoices
+  graphql.query('Invoices', ({ variables }) => {
+    // Enrich invoices with bookingNumber and compute GST breakdown
+    const enrichedInvoices = financeMockData.invoices.map(inv => {
+      const booking = bookingsMockData.bookings.find(b => b.id === inv.bookingId);
+      const bookingNumber = booking?.bookingNumber || '';
+      
+      // Calculate subtotal from totalAmount and taxBreakdown
+      const totalTax = (inv.taxBreakdown?.cgst || 0) + (inv.taxBreakdown?.sgst || 0) + (inv.taxBreakdown?.igst || 0);
+      const subtotal = inv.totalAmount - totalTax;
+      
+      // Build GST breakdown object
+      const gstRate = totalTax > 0 ? Math.round((totalTax / subtotal) * 100) : 0;
+      const gst = {
+        cgst: inv.taxBreakdown?.cgst || 0,
+        sgst: inv.taxBreakdown?.sgst || 0,
+        igst: inv.taxBreakdown?.igst || 0,
+        gstRate
+      };
+      
+      return {
+        ...inv,
+        bookingNumber,
+        subtotal,
+        gst,
+        currency: 'INR',
+        pdfUrl: `/invoices/${inv.id}.pdf`
+      };
+    });
+    
+    // Apply filters if provided
+    let filtered = enrichedInvoices;
+    const filters = variables?.filters as any;
+    if (filters) {
+      if (filters.status) {
+        filtered = filtered.filter(inv => inv.status === filters.status);
       }
-    })
-  ),
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filtered = filtered.filter(inv => 
+          inv.invoiceNumber.toLowerCase().includes(searchLower) ||
+          inv.guestName.toLowerCase().includes(searchLower) ||
+          inv.bookingNumber.toLowerCase().includes(searchLower)
+        );
+      }
+      if (filters.startDate) {
+        filtered = filtered.filter(inv => inv.issuedAt >= filters.startDate);
+      }
+      if (filters.endDate) {
+        filtered = filtered.filter(inv => inv.issuedAt <= filters.endDate);
+      }
+    }
+    
+    return HttpResponse.json({
+      data: {
+        invoices: filtered
+      }
+    });
+  }),
 
-  graphql.query('Payments', () =>
-    HttpResponse.json({
-      data: {
-        payments: financeMockData.payments
+  graphql.query('Payments', ({ variables }) => {
+    // Enrich payments with bookingNumber and provider
+    const enrichedPayments = financeMockData.payments.map(payment => {
+      const booking = bookingsMockData.bookings.find(b => b.id === payment.bookingId);
+      const bookingNumber = booking?.bookingNumber || '';
+      
+      // Map paymentGatewayRef to provider name
+      let provider = 'DIRECT';
+      if (payment.paymentGatewayRef?.startsWith('rzp_')) provider = 'RAZORPAY';
+      else if (payment.paymentGatewayRef?.startsWith('pay_')) provider = 'PAYTM';
+      else if (payment.paymentGatewayRef?.startsWith('TXN_')) provider = 'BANK_TRANSFER';
+      else if (payment.paymentGatewayRef?.startsWith('CASH_')) provider = 'CASH';
+      
+      return {
+        ...payment,
+        bookingNumber,
+        provider,
+        currency: 'INR'
+      };
+    });
+    
+    // Apply filters if provided
+    let filtered = enrichedPayments;
+    const filters = variables?.filters as any;
+    if (filters) {
+      if (filters.status) {
+        filtered = filtered.filter(p => p.status === filters.status);
       }
-    })
-  ),
+      if (filters.method) {
+        filtered = filtered.filter(p => p.method === filters.method);
+      }
+      if (filters.provider) {
+        filtered = filtered.filter(p => p.provider === filters.provider);
+      }
+      if (filters.startDate) {
+        filtered = filtered.filter(p => p.createdAt >= filters.startDate);
+      }
+      if (filters.endDate) {
+        filtered = filtered.filter(p => p.createdAt <= filters.endDate);
+      }
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filtered = filtered.filter(p => 
+          p.bookingNumber.toLowerCase().includes(searchLower) ||
+          p.paymentGatewayRef?.toLowerCase().includes(searchLower)
+        );
+      }
+    }
+    
+    return HttpResponse.json({
+      data: {
+        payments: filtered
+      }
+    });
+  }),
 
-  graphql.query('Settlements', () =>
-    HttpResponse.json({
-      data: {
-        settlements: financeMockData.settlements
+  graphql.query('Settlements', ({ variables }) => {
+    const filters = variables?.filters as any;
+    const startDate = filters?.startDate;
+    const endDate = filters?.endDate;
+    
+    // Generate settlements for the requested date range
+    const generatedSettlements: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate settlements for each day in the range (1-3 settlements per day)
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = financeMockData.settlements.filter(s => s.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(settlement => {
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount: settlement.totalAmount,
+              status: settlement.status,
+              settledAt: settlement.settledAt
+            });
+          });
+        } else {
+          // Generate default settlements for this date (1-3 per day)
+          const numSettlements = Math.floor(Math.random() * 3) + 1; // 1-3 settlements per day
+          
+          for (let i = 0; i < numSettlements; i++) {
+            // Use mock data as template or generate defaults
+            const template = financeMockData.settlements[Math.floor(Math.random() * financeMockData.settlements.length)];
+            const baseAmount = template?.totalAmount || 150000;
+            // Generate amount with variation (±30%)
+            const variation = (Math.random() * 0.6 - 0.3); // -0.3 to +0.3
+            const totalAmount = Math.round(baseAmount * (1 + variation));
+            
+            // Most settlements are SETTLED, some are PENDING
+            const isPending = Math.random() < 0.2; // 20% chance of pending
+            const status = isPending ? 'PENDING' : 'SETTLED';
+            const settledAt = status === 'SETTLED' 
+              ? new Date(new Date(dateStr).getTime() + 24 * 60 * 60 * 1000).toISOString()
+              : null;
+            
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount,
+              status,
+              settledAt
+            });
+          }
+        }
       }
-    })
-  ),
+    } else {
+      // If no date range provided, return all mock data
+      generatedSettlements.push(...financeMockData.settlements);
+    }
+    
+    // Enrich settlements with computed fields
+    const enrichedSettlements = generatedSettlements.map((settlement, index) => {
+      // Calculate commission and gateway fees (simplified - 5% commission, 2% gateway fee)
+      const commission = Math.round(settlement.totalAmount * 0.05);
+      const gatewayFee = Math.round(settlement.totalAmount * 0.02);
+      const grossAmount = settlement.totalAmount + commission + gatewayFee;
+      const netAmount = settlement.totalAmount;
+      
+      // Determine source based on index pattern
+      const sources: Array<'RAZORPAY' | 'BOOKING_COM' | 'EXPEDIA' | 'DIRECT'> = ['RAZORPAY', 'BOOKING_COM', 'EXPEDIA', 'DIRECT'];
+      const sourceIndex = index % sources.length;
+      const source = sources[sourceIndex];
+      
+      return {
+        id: `set-${settlement.date}-${index}`,
+        source,
+        referenceId: `REF-${settlement.date}-${index}`,
+        grossAmount,
+        commission,
+        gatewayFee,
+        netAmount,
+        currency: 'INR',
+        status: settlement.status,
+        expectedAt: settlement.status === 'PENDING' ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : undefined,
+        settledAt: settlement.settledAt || undefined,
+        createdAt: settlement.date + 'T00:00:00Z'
+      };
+    });
+    
+    // Apply additional filters if provided
+    let filtered = enrichedSettlements;
+    if (filters) {
+      if (filters.source) {
+        filtered = filtered.filter(s => s.source === filters.source);
+      }
+      if (filters.status) {
+        filtered = filtered.filter(s => s.status === filters.status);
+      }
+    }
+    
+    return HttpResponse.json({
+      data: {
+        settlements: filtered
+      }
+    });
+  }),
 
-  graphql.query('SettlementSummary', () =>
-    HttpResponse.json({
-      data: {
-        settlementSummary: financeMockData.settlementSummary
+  graphql.query('SettlementSummary', ({ variables }) => {
+    const { startDate, endDate } = variables as any;
+    
+    // Generate settlements for the requested date range (same logic as Settlements query)
+    const generatedSettlements: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate settlements for each day in the range (1-3 settlements per day)
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = financeMockData.settlements.filter(s => s.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(settlement => {
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount: settlement.totalAmount,
+              status: settlement.status,
+              settledAt: settlement.settledAt
+            });
+          });
+        } else {
+          // Generate default settlements for this date (1-3 per day)
+          const numSettlements = Math.floor(Math.random() * 3) + 1; // 1-3 settlements per day
+          
+          for (let i = 0; i < numSettlements; i++) {
+            // Use mock data as template or generate defaults
+            const template = financeMockData.settlements[Math.floor(Math.random() * financeMockData.settlements.length)];
+            const baseAmount = template?.totalAmount || 150000;
+            // Generate amount with variation (±30%)
+            const variation = (Math.random() * 0.6 - 0.3); // -0.3 to +0.3
+            const totalAmount = Math.round(baseAmount * (1 + variation));
+            
+            // Most settlements are SETTLED, some are PENDING
+            const isPending = Math.random() < 0.2; // 20% chance of pending
+            const status = isPending ? 'PENDING' : 'SETTLED';
+            const settledAt = status === 'SETTLED' 
+              ? new Date(new Date(dateStr).getTime() + 24 * 60 * 60 * 1000).toISOString()
+              : null;
+            
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount,
+              status,
+              settledAt
+            });
+          }
+        }
       }
-    })
-  ),
+    } else {
+      // If no date range provided, use all mock data
+      generatedSettlements.push(...financeMockData.settlements);
+    }
+    
+    const settled = generatedSettlements.filter(s => s.status === 'SETTLED');
+    const pending = generatedSettlements.filter(s => s.status === 'PENDING');
+    
+    const grossRevenue = generatedSettlements.reduce((sum, s) => sum + s.totalAmount, 0);
+    const netReceivable = settled.reduce((sum, s) => sum + s.totalAmount, 0);
+    const pendingPayout = pending.reduce((sum, s) => sum + s.totalAmount, 0);
+    
+    return HttpResponse.json({
+      data: {
+        settlementSummary: {
+          grossRevenue,
+          netReceivable,
+          pendingPayout,
+          currency: 'INR'
+        }
+      }
+    });
+  }),
 
   // =========================================================================
   // HOUSEKEEPING
   // =========================================================================
 
-  graphql.query('HousekeepingRooms', () =>
-    HttpResponse.json({
+  graphql.query('HousekeepingRooms', () => {
+    // Enrich housekeeping rooms with roomType and staff info
+    const enrichedRooms = housekeepingMockData.housekeepingRooms.map(hkRoom => {
+      const room = roomsMockData.rooms.find(r => r.id === hkRoom.id);
+      const roomType = room ? roomsMockData.roomTypes.find(rt => rt.id === room.roomTypeId) : null;
+      const staff = settingsMockData.staffUsers.find(s => s.id === hkRoom.assignedTo);
+      
+      return {
+        id: hkRoom.id,
+        roomNumber: hkRoom.number,
+        roomType: roomType?.name || 'Unknown',
+        floor: room?.floor || 1,
+        status: hkRoom.status,
+        assignedStaff: staff ? { id: staff.id, name: staff.name } : undefined,
+        lastCleanedAt: hkRoom.lastCleaned
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        housekeepingRooms: housekeepingMockData.housekeepingRooms
+        housekeepingRooms: enrichedRooms
       }
-    })
-  ),
+    });
+  }),
 
-  graphql.query('HousekeepingSummary', () =>
-    HttpResponse.json({
+  graphql.query('HousekeepingSummary', () => {
+    const summary = housekeepingMockData.housekeepingSummary;
+    return HttpResponse.json({
       data: {
-        housekeepingSummary: housekeepingMockData.housekeepingSummary
+        housekeepingSummary: {
+          dirty: summary.dirtyRooms,
+          clean: summary.cleanRooms,
+          inspected: summary.inspectedRooms,
+          outOfService: summary.outOfServiceRooms
+        }
       }
-    })
-  ),
+    });
+  }),
 
   graphql.mutation('UpdateHousekeepingStatus', () =>
     HttpResponse.json({
@@ -432,27 +916,72 @@ export const handlers = [
     })
   ),
 
-  graphql.query('CleaningLogs', ({ variables }) =>
-    HttpResponse.json({
+  graphql.query('CleaningLogs', ({ variables }) => {
+    let logs = housekeepingMockData.cleaningLogs;
+    
+    // Filter by roomId if provided
+    if (variables?.roomId) {
+      logs = logs.filter(log => log.roomId === variables.roomId);
+    }
+    
+    // Enrich cleaning logs with staff name
+    const enrichedLogs = logs.map(log => {
+      const staff = settingsMockData.staffUsers.find(s => s.id === log.cleanedBy);
+      return {
+        id: log.id,
+        roomId: log.roomId,
+        staffName: staff?.name || 'Unknown Staff',
+        status: log.status,
+        note: `Cleaned in ${log.duration} minutes`,
+        createdAt: log.cleanedAt
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        cleaningLogs: housekeepingMockData.cleaningLogs.map(log =>
-          log.roomId === (variables.roomId || log.roomId) ? log : log
-        )
+        cleaningLogs: enrichedLogs
       }
-    })
-  ),
+    });
+  }),
 
   // =========================================================================
   // MAINTENANCE
   // =========================================================================
 
-  graphql.query('MaintenanceIssues', () =>
-    HttpResponse.json({
+  graphql.query('MaintenanceIssues', ({ variables }) => {
+    let issues = maintenanceMockData.maintenanceIssues;
+    
+    // Filter by status if provided
+    if (variables?.status) {
+      issues = issues.filter(issue => issue.status === variables.status);
+    }
+    
+    // Enrich maintenance issues with roomNumber and roomType
+    const enrichedIssues = issues.map(issue => {
+      const room = roomsMockData.rooms.find(r => r.id === issue.roomId);
+      const roomType = room ? roomsMockData.roomTypes.find(rt => rt.id === room.roomTypeId) : null;
+      
+      // Calculate createdAt from slaDeadline (subtract some hours for reporting time)
+      const createdAt = issue.slaDeadline ? new Date(new Date(issue.slaDeadline).getTime() - 2 * 60 * 60 * 1000).toISOString() : new Date().toISOString();
+      
+      return {
+        ...issue,
+        roomNumber: room?.roomNumber || 'N/A',
+        roomType: roomType?.name || 'Unknown',
+        reason: issue.description || issue.issueType, // Use description as reason
+        blockedFrom: issue.slaDeadline || createdAt, // Use slaDeadline as blockedFrom
+        blockedTo: issue.status === 'RESOLVED' ? issue.slaDeadline : undefined,
+        createdAt,
+        resolvedAt: issue.status === 'RESOLVED' ? issue.slaDeadline : undefined
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        maintenanceIssues: maintenanceMockData.maintenanceIssues
+        maintenanceIssues: enrichedIssues
       }
-    })
-  ),
+    });
+  }),
 
   graphql.mutation('CreateMaintenance', () =>
     HttpResponse.json({
@@ -474,40 +1003,98 @@ export const handlers = [
   // CRM & GUESTS
   // =========================================================================
 
-  graphql.query('Guests', () =>
-    HttpResponse.json({
+  graphql.query('Guests', () => {
+    // Enrich guests with computed fields from guestStays
+    const enrichedGuests = guestsMockData.guests.map(guest => {
+      const stays = guestsMockData.guestStays.filter(gs => gs.guestId === guest.id);
+      const totalStays = stays.length;
+      const lifetimeValue = stays.reduce((sum, stay) => sum + (stay.totalSpent || 0), 0);
+      const tags: string[] = [];
+      if (guest.isVip) tags.push('VIP');
+      // Add BLACKLISTED tag if needed (not in current mock data)
+      
+      return {
+        ...guest,
+        tags,
+        totalStays,
+        lifetimeValue,
+        currency: 'INR' // Default currency, could be from hotel settings
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        guests: guestsMockData.guests
+        guests: enrichedGuests
       }
-    })
-  ),
+    });
+  }),
 
-  graphql.query('GuestProfile', ({ variables }) =>
-    HttpResponse.json({
+  graphql.query('GuestProfile', ({ variables }) => {
+    const guest = guestsMockData.guests.find(g => g.id === variables.id) || guestsMockData.guests[0];
+    const stays = guestsMockData.guestStays.filter(gs => gs.guestId === guest.id);
+    const totalStays = stays.length;
+    const lifetimeValue = stays.reduce((sum, stay) => sum + (stay.totalSpent || 0), 0);
+    const tags: string[] = [];
+    if (guest.isVip) tags.push('VIP');
+    
+    return HttpResponse.json({
       data: {
         guest: {
-          ...guestsMockData.guests[0],
-          id: variables.id
+          ...guest,
+          id: variables.id,
+          tags,
+          totalStays,
+          lifetimeValue,
+          currency: 'INR'
         }
       }
-    })
-  ),
+    });
+  }),
 
-  graphql.query('GuestStays', () =>
-    HttpResponse.json({
+  graphql.query('GuestStays', ({ variables }) => {
+    let stays = guestsMockData.guestStays;
+    
+    // Filter by guestId if provided
+    if (variables?.guestId) {
+      stays = stays.filter(gs => gs.guestId === variables.guestId);
+    }
+    
+    // Enrich stays with booking information for display
+    const enrichedStays = stays.map(stay => {
+      const booking = bookingsMockData.bookings.find(b => b.guestId === stay.guestId && 
+        b.checkInDate === stay.checkInDate && b.checkOutDate === stay.checkOutDate);
+      
+      return {
+        ...stay,
+        bookingId: booking?.id,
+        bookingNumber: booking?.bookingNumber,
+        roomType: booking?.roomType,
+        amountPaid: stay.totalSpent,
+        status: booking?.status || 'CHECKED_OUT'
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        guestStays: guestsMockData.guestStays
+        guestStays: enrichedStays
       }
-    })
-  ),
+    });
+  }),
 
-  graphql.query('GuestNotes', () =>
-    HttpResponse.json({
+  graphql.query('GuestNotes', ({ variables }) => {
+    let notes = guestsMockData.guestNotes;
+    
+    // Filter by guestId if provided
+    if (variables?.guestId) {
+      notes = notes.filter(gn => gn.guestId === variables.guestId);
+    }
+    
+    return HttpResponse.json({
       data: {
-        guestNotes: guestsMockData.guestNotes
+        guestNotes: notes
       }
-    })
-  ),
+    });
+  }),
 
   graphql.mutation('AddGuestNote', ({ variables }) =>
     HttpResponse.json({
@@ -579,6 +1166,38 @@ export const handlers = [
     })
   ),
 
+  graphql.mutation('GenerateAIPulse', async ({ variables }) => {
+    await delay(800);
+    const { summary } = variables as any;
+    
+    // Generate AI pulse based on summary data
+    let pulse = '';
+    if (summary) {
+      const { totalRevenue, occupancyRate, adr } = summary;
+      
+      if (occupancyRate >= 85) {
+        pulse = `🔥 Exceptional performance! ${occupancyRate}% occupancy with ${adr ? `₹${adr} ADR` : 'strong ADR'}. Revenue trending ${totalRevenue > 500000 ? 'exceptionally high' : 'positively'}.`;
+      } else if (occupancyRate >= 70) {
+        pulse = `✅ Solid operations. ${occupancyRate}% occupancy maintained. ${totalRevenue > 300000 ? 'Revenue targets on track' : 'Revenue within expectations'}.`;
+      } else if (occupancyRate >= 50) {
+        pulse = `⚠️ Moderate occupancy at ${occupancyRate}%. Consider promotional strategies to boost bookings.`;
+      } else {
+        pulse = `📊 Low occupancy detected (${occupancyRate}%). Immediate action recommended: review pricing and marketing campaigns.`;
+      }
+    } else {
+      pulse = 'Operations are within normal parameters.';
+    }
+    
+    return HttpResponse.json({
+      data: {
+        generateAIPulse: {
+          pulse,
+          success: true
+        }
+      }
+    });
+  }),
+
   // =========================================================================
   // SETTINGS & ADMIN
   // =========================================================================
@@ -591,13 +1210,50 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetHotelSettings', () =>
-    HttpResponse.json({
-      data: {
-        hotelSettings: settingsMockData.hotelSettings
+  graphql.query('GetHotelSettings', ({ request }) => {
+    const hotelId = request.headers.get('X-Hotel-Id') || 'h-01';
+    
+    // Find the hotel
+    const hotel = hotelsMockData.hotels.find(h => h.id === hotelId);
+    if (!hotel) {
+      return HttpResponse.json({
+        errors: [{
+          message: 'Hotel not found',
+          extensions: { code: 'NOT_FOUND' }
+        }]
+      });
+    }
+    
+    // Find tenant for contact info
+    const tenant = tenantSubscriptionMockData.tenants.find(t => t.id === hotel.tenantId);
+    
+    // Find branding for this tenant
+    const branding = hotelsMockData.branding.find(b => b.tenantId === hotel.tenantId);
+    
+    // Construct hotelSettings object matching HotelSettings type
+    const hotelSettings = {
+      id: hotel.id,
+      name: hotel.name,
+      address: hotel.address,
+      city: hotel.city,
+      timezone: hotel.timezone,
+      currency: hotel.currency,
+      contactEmail: tenant?.contactEmail || 'contact@hotel.com',
+      contactPhone: tenant?.contactPhone || '+1 234 567 8900',
+      brand: {
+        name: hotel.name,
+        primaryColor: branding?.primaryColor || '#4f46e5',
+        theme: 'light' as const,
+        logoUrl: branding?.logoUrl
       }
-    })
-  ),
+    };
+    
+    return HttpResponse.json({
+      data: {
+        hotelSettings
+      }
+    });
+  }),
 
   graphql.query('GetStaffUsers', () =>
     HttpResponse.json({
@@ -611,13 +1267,27 @@ export const handlers = [
   // PRICING
   // =========================================================================
 
-  graphql.query('GetRatePlans', () =>
-    HttpResponse.json({
+  graphql.query('GetRatePlans', () => {
+    // Enrich rate plans with roomTypeName
+    const enrichedRatePlans = pricingMockData.ratePlans.map(plan => {
+      // Find a room type for this hotel (simplified - could be more sophisticated)
+      const roomType = roomsMockData.roomTypes.find(rt => rt.hotelId === plan.hotelId);
+      
+      return {
+        ...plan,
+        roomTypeId: roomType?.id || '',
+        roomTypeName: roomType?.name || 'All Rooms',
+        status: plan.isActive ? 'ACTIVE' : 'INACTIVE'
+        // minNights and maxNights are not in mock data, so they remain undefined
+      };
+    });
+    
+    return HttpResponse.json({
       data: {
-        ratePlans: pricingMockData.ratePlans
+        ratePlans: enrichedRatePlans
       }
-    })
-  ),
+    });
+  }),
 
   graphql.mutation('CreateRatePlan', () =>
     HttpResponse.json({
@@ -635,13 +1305,97 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetPricingCalendar', () =>
-    HttpResponse.json({
-      data: {
-        pricingCalendar: pricingMockData.pricingCalendar
+  graphql.query('GetPricingCalendar', ({ variables }) => {
+    const startDate = variables?.startDate;
+    const endDate = variables?.endDate;
+    const roomTypeId = variables?.roomTypeId;
+    
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
+    
+    // Generate pricing calendar for the requested date range
+    const generatedCalendar: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate pricing calendar for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = pricingMockData.pricingCalendar.filter(p => p.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(p => {
+            if (!roomTypeId || p.roomTypeId === roomTypeId) {
+              generatedCalendar.push({
+                date: dateStr,
+                roomTypeId: p.roomTypeId,
+                basePrice: p.basePrice,
+                adjustedPrice: p.adjustedPrice,
+                occupancy: p.occupancy
+              });
+            }
+          });
+        } else {
+          // Generate default pricing for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults based on room type basePrice
+            const template = pricingMockData.pricingCalendar.find(p => p.roomTypeId === rt.id);
+            const basePrice = template?.basePrice || rt.basePrice;
+            // Generate adjusted price with some variation (±20%)
+            const variation = (Math.random() * 0.4 - 0.2); // -0.2 to +0.2
+            const adjustedPrice = Math.round(basePrice * (1 + variation));
+            // Generate occupancy between 60-95%
+            const occupancy = Math.floor(Math.random() * 35) + 60;
+            
+            generatedCalendar.push({
+              date: dateStr,
+              roomTypeId: rt.id,
+              basePrice,
+              adjustedPrice,
+              occupancy
+            });
+          });
+        }
       }
-    })
-  ),
+    } else {
+      // If no date range provided, return all mock data
+      generatedCalendar.push(...pricingMockData.pricingCalendar);
+    }
+    
+    // Enrich pricing calendar with ratePlanId and availableRooms
+    const enrichedCalendar = generatedCalendar.map(item => {
+      // Get available rooms from inventory
+      const inventory = roomsMockData.inventory.find(
+        inv => inv.roomTypeId === item.roomTypeId && inv.date === item.date
+      );
+      
+      return {
+        id: `pc-${item.date}-${item.roomTypeId}`,
+        date: item.date,
+        roomTypeId: item.roomTypeId,
+        ratePlanId: 'rp-01', // Default rate plan
+        basePrice: item.basePrice,
+        adjustedPrice: item.adjustedPrice,
+        price: item.adjustedPrice, // Use adjustedPrice as the current price
+        occupancy: item.occupancy,
+        availableRooms: inventory?.availableRooms || 0,
+        closed: false
+      };
+    });
+    
+    return HttpResponse.json({
+      data: {
+        pricingCalendar: enrichedCalendar
+      }
+    });
+  }),
 
   graphql.mutation('BulkUpdatePricing', () =>
     HttpResponse.json({

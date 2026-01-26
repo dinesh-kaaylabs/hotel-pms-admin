@@ -16,6 +16,10 @@ export const GUESTS_QUERY = `
       }
       isVip
       privacyLevel
+      tags
+      totalStays
+      lifetimeValue
+      currency
     }
   }
 `;
@@ -37,13 +41,17 @@ export const GUEST_PROFILE_QUERY = `
       }
       isVip
       privacyLevel
+      tags
+      totalStays
+      lifetimeValue
+      currency
     }
   }
 `;
 
 export const GUEST_STAYS_QUERY = `
-  query GuestStays {
-    guestStays {
+  query GuestStays($guestId: ID) {
+    guestStays(guestId: $guestId) {
       id
       guestId
       hotelId
@@ -51,13 +59,18 @@ export const GUEST_STAYS_QUERY = `
       checkOutDate
       roomNumber
       totalSpent
+      bookingId
+      bookingNumber
+      roomType
+      amountPaid
+      status
     }
   }
 `;
 
 export const GUEST_NOTES_QUERY = `
-  query GuestNotes {
-    guestNotes {
+  query GuestNotes($guestId: ID) {
+    guestNotes(guestId: $guestId) {
       id
       guestId
       hotelId

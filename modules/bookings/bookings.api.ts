@@ -1,25 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { graphqlRequest } from '../../api/graphqlRequest';
 import { Booking, BookingStatus, PaginatedResponse, Invoice, Payment } from './bookings.types';
-import { BOOKINGS_QUERY, UPDATE_BOOKING_STATUS_MUTATION } from '../../graphql/booking.gql';
+import { BOOKINGS_QUERY, BOOKINGS_PAGINATED_QUERY, UPDATE_BOOKING_STATUS_MUTATION } from '../../graphql/booking.gql';
 
 export const useBookings = (params: { page: number; pageSize: number; search?: string; status?: string }) => {
-  console.log('[useBookings] Query params:', params);
-  
   return useQuery<PaginatedResponse<Booking>>({
     queryKey: ['bookings', params],
     queryFn: async () => {
-      console.log('[useBookings] Fetching with params:', params);
-      const data = await graphqlRequest<{ bookings: Booking[] }>(BOOKINGS_QUERY, params);
-      console.log('[useBookings] GraphQL response:', data);
-      const result = {
-        data: data.bookings,
-        totalCount: data.bookings.length,
-        page: params.page,
-        pageSize: params.pageSize
-      };
-      console.log('[useBookings] Transformed result:', result);
-      return result;
+      // Try paginated query first, fallback to legacy if not supported
+      try {
+        const data = await graphqlRequest<{ bookingsPaginated: PaginatedResponse<Booking> }>(
+          BOOKINGS_PAGINATED_QUERY, 
+          params
+        );
+        return data.bookingsPaginated;
+      } catch (err: any) {
+        // Fallback to legacy query if paginated not available
+        if (err.extensions?.code === 'FIELD_NOT_FOUND' || err.message?.includes('bookingsPaginated')) {
+          const data = await graphqlRequest<{ bookings: Booking[] }>(BOOKINGS_QUERY, params);
+          
+          // Client-side pagination fallback (limited functionality)
+          // Note: This won't have accurate totalCount for server-side filtering
+          return {
+            data: data.bookings,
+            totalCount: data.bookings.length, // Inaccurate - only current page count
+            page: params.page,
+            pageSize: params.pageSize
+          };
+        }
+        throw err;
+      }
     },
     placeholderData: (previousData) => previousData,
   });
@@ -32,7 +42,7 @@ export const useBookingDetails = (id: string | null) => {
       const data = await graphqlRequest<{ booking: Booking }>(`
         query GetBooking($id: ID!) {
           booking(id: $id) {
-            id bookingNumber guestName roomType roomNumber checkInDate checkOutDate status paymentStatus totalAmount createdAt
+            id bookingNumber hotelId guestId guestName roomType roomNumber checkInDate checkOutDate status paymentStatus totalAmount paidAmount outstandingAmount finalAmount gstAmount source sourceId arrivalTime departureTime cancellationPolicy noShowPolicy assignedAt createdAt
           }
         }
       `, { id });
@@ -66,8 +76,26 @@ export const useUpdateBookingStatus = () => {
     mutationFn: async ({ id, status }: { id: string; status: BookingStatus }) => {
       return graphqlRequest<{ updateBookingStatus: { success: boolean } }>(UPDATE_BOOKING_STATUS_MUTATION, { bookingId: id, status });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    onSuccess: (_, variables) => {
+      // Update specific booking in cache
+      queryClient.setQueriesData<PaginatedResponse<Booking>>(
+        { queryKey: ['bookings'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(booking => 
+              booking.id === variables.id ? { ...booking, status: variables.status } : booking
+            ),
+          };
+        }
+      );
+      
+      // Only invalidate the specific booking details query
+      queryClient.invalidateQueries({ 
+        queryKey: ['bookings', variables.id],
+        exact: true 
+      });
     },
   });
 };
@@ -92,7 +120,17 @@ export const useCreateBooking = () => {
       return data.createBooking;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      // Invalidate bookings list (new booking should appear)
+      queryClient.invalidateQueries({ 
+        queryKey: ['bookings'],
+        exact: false 
+      });
+      
+      // Also invalidate room inventory as availability changed
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-inventory'],
+        exact: false 
+      });
     },
   });
 };

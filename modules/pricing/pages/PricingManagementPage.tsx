@@ -49,7 +49,7 @@ export default function PricingManagementPage() {
       setRatePlans(await plansRes.json());
       setPricingCalendar(await calendarRes.json());
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function PricingManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create rate plan:', error);
+      // Error handled silently
     }
   };
 
@@ -87,7 +87,7 @@ export default function PricingManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update rate plan:', error);
+      // Error handled silently
     }
   };
 
@@ -96,10 +96,10 @@ export default function PricingManagementPage() {
     try {
       const response = await fetch(`/api/rate-plans/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchData();
+        await         fetchData();
       }
     } catch (error) {
-      console.error('Failed to delete rate plan:', error);
+      // Error handled silently
     }
   };
 

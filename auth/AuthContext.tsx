@@ -30,8 +30,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw err;
       }
     },
-    // Only fetch user data once hotel context is available
-    enabled: !!activeHotelId,
+    // Only fetch user data once hotel context is available and valid
+    enabled: !!activeHotelId && activeHotelId !== 'pending' && activeHotelId.trim() !== '',
     retry: (count, err: any) => {
       const code = err.code || err.extensions?.code;
       if (code === 'UNAUTHENTICATED') return false;
@@ -45,13 +45,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
+      // Wait for server logout to complete
       await authApi.logout();
-    } catch (e) {
-      // Ignore
-    } finally {
+      
+      // Only clear local state after server confirms logout
       queryClient.setQueryData(['me'], null);
       sessionStorage.removeItem('pms_active_hotel_id');
+      
+      // Clear all cached queries to prevent data leakage
+      queryClient.clear();
+      
       // Emit logout event for app-level handling
+      window.dispatchEvent(new CustomEvent('auth:logout-complete'));
+    } catch (e) {
+      // Even if server logout fails, clear local state for security
+      // (httpOnly cookies might still be valid, but we prevent UI access)
+      console.error('Logout failed on server, clearing local state anyway:', e);
+      
+      queryClient.setQueryData(['me'], null);
+      sessionStorage.removeItem('pms_active_hotel_id');
+      queryClient.clear();
+      
       window.dispatchEvent(new CustomEvent('auth:logout-complete'));
     }
   };

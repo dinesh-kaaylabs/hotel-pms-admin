@@ -88,6 +88,7 @@ export const CHECK_IN_INPUT = `
     guestIdDocument: String
     paymentMethod: PaymentMethod
     specialRequests: String
+    idempotencyKey: String
   }
 `;
 
@@ -97,6 +98,7 @@ export const CHECK_OUT_INPUT = `
     paymentMethod: PaymentMethod!
     paymentAmount: Float!
     guestFeedback: String
+    idempotencyKey: String
   }
 `;
 
@@ -115,6 +117,7 @@ export const RECORD_PAYMENT_INPUT = `
     method: PaymentMethod!
     transactionId: String
     notes: String
+    idempotencyKey: String
   }
 `;
 

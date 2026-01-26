@@ -10,6 +10,8 @@ import { useAuth } from '../../../auth/AuthContext';
 import { BookingInvoicePanel } from './BookingInvoicePanel';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
+import { getErrorMessage } from '../../../utils/errorHandling';
 
 interface DrawerProps {
   booking: Booking | null;
@@ -19,6 +21,7 @@ interface DrawerProps {
 export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }) => {
   const { user } = useAuth();
   const { success, error } = useToast();
+  const { format } = useCurrency();
   const updateStatus = useUpdateBookingStatus();
   const processRefund = useProcessRefund();
   
@@ -37,9 +40,15 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
   if (!booking) return null;
 
   const handleStatusUpdate = async (status: BookingStatus) => {
-    await updateStatus.mutateAsync({ id: booking.id, status });
-    setConfirmConfig(null);
-    onClose();
+    try {
+      await updateStatus.mutateAsync({ id: booking.id, status });
+      success('Booking status updated successfully');
+      setConfirmConfig(null);
+      onClose();
+    } catch (err) {
+      error(getErrorMessage(err, 'update booking status'));
+      setConfirmConfig(null);
+    }
   };
 
   const handleProcessRefund = async () => {
@@ -106,7 +115,11 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Booking Detail</p>
                 <h2 className="text-xl font-bold text-slate-900">{booking.bookingNumber}</h2>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <button 
+                onClick={onClose} 
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                aria-label="Close drawer"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -136,9 +149,86 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
                       <Calendar size={12} className="text-indigo-400" /> Dates
                     </p>
                     <p className="text-sm font-bold text-slate-700 whitespace-nowrap truncate">{booking.checkInDate} - {booking.checkOutDate}</p>
+                    {booking.arrivalTime && (
+                      <p className="text-[10px] text-slate-400 font-medium mt-1">Arrival: {booking.arrivalTime}</p>
+                    )}
+                    {booking.departureTime && (
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Departure: {booking.departureTime}</p>
+                    )}
                   </div>
                 </div>
+
+                {/* Additional Booking Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  {booking.source && (
+                    <div className="p-4 bg-white border border-slate-100 rounded-[24px] shadow-sm">
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">Source</p>
+                      <p className="text-sm font-bold text-slate-700">{booking.source}</p>
+                    </div>
+                  )}
+                  {booking.assignedAt && (
+                    <div className="p-4 bg-white border border-slate-100 rounded-[24px] shadow-sm">
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">Assigned</p>
+                      <p className="text-sm font-bold text-slate-700">{new Date(booking.assignedAt).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Policies */}
+                {(booking.cancellationPolicy || booking.noShowPolicy) && (
+                  <div className="space-y-2">
+                    {booking.cancellationPolicy && (
+                      <div className="p-4 bg-amber-50 border border-amber-100 rounded-[24px]">
+                        <p className="text-[10px] text-amber-600 uppercase font-black tracking-widest mb-1">Cancellation Policy</p>
+                        <p className="text-xs font-medium text-amber-800">{booking.cancellationPolicy}</p>
+                      </div>
+                    )}
+                    {booking.noShowPolicy && (
+                      <div className="p-4 bg-rose-50 border border-rose-100 rounded-[24px]">
+                        <p className="text-[10px] text-rose-600 uppercase font-black tracking-widest mb-1">No-Show Policy</p>
+                        <p className="text-xs font-medium text-rose-800">{booking.noShowPolicy}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
+
+              {/* Financial Summary */}
+              {(booking.paidAmount !== undefined || booking.outstandingAmount !== undefined || booking.gstAmount !== undefined) && (
+                <section className="space-y-4">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Financial Summary</h3>
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">Total Amount</span>
+                      <span className="font-bold text-slate-900">{format(booking.totalAmount)}</span>
+                    </div>
+                    {booking.paidAmount !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Paid Amount</span>
+                        <span className="font-bold text-green-600">{format(booking.paidAmount)}</span>
+                      </div>
+                    )}
+                    {booking.outstandingAmount !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Outstanding</span>
+                        <span className="font-bold text-rose-600">{format(booking.outstandingAmount)}</span>
+                      </div>
+                    )}
+                    {booking.gstAmount !== undefined && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">GST Amount</span>
+                        <span className="font-medium text-slate-700">{format(booking.gstAmount)}</span>
+                      </div>
+                    )}
+                    {booking.finalAmount !== undefined && booking.finalAmount !== booking.totalAmount && (
+                      <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                        <span className="font-bold text-slate-900">Final Amount</span>
+                        <span className="font-black text-slate-900">{format(booking.finalAmount)}</span>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {isAdmin && (
                 <section className="space-y-4">

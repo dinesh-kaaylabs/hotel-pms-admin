@@ -1,35 +1,87 @@
-import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Bed, DoorOpen, AlertCircle } from 'lucide-react';
-import { useRooms, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
-import { Room, RoomType } from '../rooms.types';
+import { useState, useMemo, useCallback } from 'react';
+import { Plus, Search, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRoomsPaginated, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType, useRoomStats } from '../rooms.api';
+import { Room, RoomType, RoomStatus } from '../rooms.types';
+import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
+import { useHotelStore } from '../../../stores/hotelStore';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { getErrorMessage } from '../../../utils/errorHandling';
+import { RoomCard } from '../components/RoomCard';
+import { RoomTypeCard } from '../components/RoomTypeCard';
+import { RoomStats } from '../components/RoomStats';
+import { RoomFormModal } from '../components/RoomFormModal';
+import { RoomTypeFormModal } from '../components/RoomTypeFormModal';
+import { useDebounce } from '../hooks/useDebounce';
+import { validateRoomForm, validateRoomTypeForm } from '../utils/validation';
+import { ROOM_STATUS_OPTIONS } from '../rooms.constants';
+import type { RoomFormData as ValidationRoomFormData, RoomTypeFormData as ValidationRoomTypeFormData } from '../utils/validation';
+
+const DEFAULT_PAGE_SIZE = 24; // 4 columns × 6 rows
 
 export default function RoomsManagementPage() {
-  const { data: rooms = [], isLoading: loading } = useRooms();
-  const { data: roomTypes = [] } = useRoomTypes();
+  const { activeHotelId } = useHotelStore();
+  const { success, error } = useToast();
+  const { format } = useCurrency();
   
-  const createRoomMutation = useCreateRoom();
-  const updateRoomMutation = useUpdateRoom();
-  const deleteRoomMutation = useDeleteRoom();
-  const createRoomTypeMutation = useCreateRoomType();
-  const deleteRoomTypeMutation = useDeleteRoomType();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearchQuery = useDebounce(searchInput, 300);
+  const [statusFilter, setStatusFilter] = useState<RoomStatus | 'ALL'>('ALL');
+  
+  // Use paginated query with hotel-specific caching
+  const { data: roomsData, isLoading: loading } = useRoomsPaginated({
+    hotelId: activeHotelId,
+    page,
+    pageSize,
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter !== 'ALL' ? statusFilter : undefined,
+  });
+  
+  const rooms = roomsData?.data || [];
+  const totalCount = roomsData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  
+  const { data: roomTypes = [] } = useRoomTypes(activeHotelId);
+  
+  // Use dedicated stats endpoint for accurate counts across all rooms
+  const { data: statsData } = useRoomStats(activeHotelId);
+  
+  const createRoomMutation = useCreateRoom(activeHotelId);
+  const updateRoomMutation = useUpdateRoom(activeHotelId);
+  const deleteRoomMutation = useDeleteRoom(activeHotelId);
+  const createRoomTypeMutation = useCreateRoomType(activeHotelId);
+  const deleteRoomTypeMutation = useDeleteRoomType(activeHotelId);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showEditRoomModal, setShowEditRoomModal] = useState(false);
   const [showCreateTypeModal, setShowCreateTypeModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [activeTab, setActiveTab] = useState<'rooms' | 'types'>('rooms');
+  const [deleteRoomConfirm, setDeleteRoomConfirm] = useState<{ isOpen: boolean; roomId: string | null }>({ isOpen: false, roomId: null });
+  const [deleteTypeConfirm, setDeleteTypeConfirm] = useState<{ isOpen: boolean; typeId: string | null }>({ isOpen: false, typeId: null });
   
-  const [roomFormData, setRoomFormData] = useState({
+  // Reset to page 1 when search or filter changes
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    setPage(1);
+  }, []);
+  
+  const handleStatusFilterChange = useCallback((value: RoomStatus | 'ALL') => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
+  
+  const [roomFormData, setRoomFormData] = useState<ValidationRoomFormData>({
     roomNumber: '',
     roomTypeId: '',
     floor: 1,
     viewType: 'CITY_VIEW',
-    status: 'CLEAN' as const,
+    status: 'CLEAN',
   });
 
-  const [typeFormData, setTypeFormData] = useState({
+  const [typeFormData, setTypeFormData] = useState<ValidationRoomTypeFormData>({
     name: '',
     capacity: 2,
     basePrice: 0,
@@ -39,24 +91,73 @@ export default function RoomsManagementPage() {
     extraBedPrice: 0,
   });
 
+  const [roomFormErrors, setRoomFormErrors] = useState<Partial<Record<keyof ValidationRoomFormData, string>>>({});
+  const [typeFormErrors, setTypeFormErrors] = useState<Partial<Record<keyof ValidationRoomTypeFormData, string>>>({});
+
+  // Optimized room type lookup map
+  const roomTypeMap = useMemo(() => {
+    return new Map(roomTypes.map(t => [t.id, t.name]));
+  }, [roomTypes]);
+
+  // Use stats from dedicated endpoint (accurate across all rooms, not affected by pagination/filters)
+  const roomStats = useMemo(() => {
+    if (statsData) {
+      return {
+        total: statsData.total,
+        clean: statsData.clean,
+        dirty: statsData.dirty,
+        occupied: statsData.occupied,
+        maintenance: statsData.maintenance,
+      };
+    }
+    // Fallback to calculating from current page (inaccurate but better than nothing)
+    return {
+      total: totalCount,
+      clean: rooms.filter(r => r.status === 'CLEAN').length,
+      dirty: rooms.filter(r => r.status === 'DIRTY').length,
+      occupied: rooms.filter(r => r.status === 'OCCUPIED').length,
+      maintenance: rooms.filter(r => r.status === 'MAINTENANCE').length,
+    };
+  }, [statsData, rooms, totalCount]);
+
+  const getRoomTypeName = useCallback((typeId: string) => {
+    return roomTypeMap.get(typeId) || 'Unknown';
+  }, [roomTypeMap]);
+
   const handleCreateRoom = async () => {
+    const errors = validateRoomForm(roomFormData);
+    if (Object.keys(errors).length > 0) {
+      setRoomFormErrors(errors);
+      return;
+    }
+    setRoomFormErrors({});
+    
     try {
       await createRoomMutation.mutateAsync({
         roomNumber: roomFormData.roomNumber,
         roomTypeId: roomFormData.roomTypeId,
         floor: roomFormData.floor,
         viewType: roomFormData.viewType,
-        status: roomFormData.status,
+        status: roomFormData.status as RoomStatus,
       });
+      success('Room created successfully');
       setShowCreateRoomModal(false);
       resetRoomForm();
-    } catch (error) {
-      console.error('Failed to create room:', error);
+    } catch (err) {
+      error(getErrorMessage(err, 'create room'));
     }
   };
 
   const handleUpdateRoom = async () => {
     if (!selectedRoom) return;
+    
+    const errors = validateRoomForm(roomFormData);
+    if (Object.keys(errors).length > 0) {
+      setRoomFormErrors(errors);
+      return;
+    }
+    setRoomFormErrors({});
+    
     try {
       await updateRoomMutation.mutateAsync({
         id: selectedRoom.id,
@@ -65,18 +166,27 @@ export default function RoomsManagementPage() {
           roomTypeId: roomFormData.roomTypeId,
           floor: roomFormData.floor,
           viewType: roomFormData.viewType,
-          status: roomFormData.status,
+          status: roomFormData.status as RoomStatus,
         },
       });
+      success('Room updated successfully');
       setShowEditRoomModal(false);
       setSelectedRoom(null);
       resetRoomForm();
-    } catch (error) {
-      console.error('Failed to update room:', error);
+    } catch (err) {
+      // Optimistic update was reverted, show error to user
+      error(getErrorMessage(err, 'update room') + ' - Changes have been reverted.');
     }
   };
 
   const handleCreateRoomType = async () => {
+    const errors = validateRoomTypeForm(typeFormData);
+    if (Object.keys(errors).length > 0) {
+      setTypeFormErrors(errors);
+      return;
+    }
+    setTypeFormErrors({});
+    
     try {
       await createRoomTypeMutation.mutateAsync({
         name: typeFormData.name,
@@ -87,32 +197,40 @@ export default function RoomsManagementPage() {
         extraBedAllowed: typeFormData.extraBedAllowed,
         extraBedPrice: typeFormData.extraBedAllowed ? typeFormData.extraBedPrice : null,
       });
+      success('Room type created successfully');
       setShowCreateTypeModal(false);
       resetTypeForm();
-    } catch (error) {
-      console.error('Failed to create room type:', error);
+    } catch (err) {
+      error(getErrorMessage(err, 'create room type'));
     }
   };
 
-  const handleDeleteRoom = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this room?')) return;
+  const handleDeleteRoom = async () => {
+    if (!deleteRoomConfirm.roomId) return;
     try {
-      await deleteRoomMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete room:', error);
+      await deleteRoomMutation.mutateAsync(deleteRoomConfirm.roomId);
+      success('Room deleted successfully');
+      setDeleteRoomConfirm({ isOpen: false, roomId: null });
+    } catch (err) {
+      // Optimistic update was reverted, show error to user
+      error(getErrorMessage(err, 'delete room') + ' - Changes have been reverted.');
+      setDeleteRoomConfirm({ isOpen: false, roomId: null });
     }
   };
 
-  const handleDeleteRoomType = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this room type?')) return;
+  const handleDeleteRoomType = async () => {
+    if (!deleteTypeConfirm.typeId) return;
     try {
-      await deleteRoomTypeMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete room type:', error);
+      await deleteRoomTypeMutation.mutateAsync(deleteTypeConfirm.typeId);
+      success('Room type deleted successfully');
+      setDeleteTypeConfirm({ isOpen: false, typeId: null });
+    } catch (err) {
+      error(getErrorMessage(err, 'delete room type'));
+      setDeleteTypeConfirm({ isOpen: false, typeId: null });
     }
   };
 
-  const resetRoomForm = () => {
+  const resetRoomForm = useCallback(() => {
     setRoomFormData({
       roomNumber: '',
       roomTypeId: '',
@@ -120,9 +238,10 @@ export default function RoomsManagementPage() {
       viewType: 'CITY_VIEW',
       status: 'CLEAN',
     });
-  };
+    setRoomFormErrors({});
+  }, []);
 
-  const resetTypeForm = () => {
+  const resetTypeForm = useCallback(() => {
     setTypeFormData({
       name: '',
       capacity: 2,
@@ -132,47 +251,57 @@ export default function RoomsManagementPage() {
       extraBedAllowed: true,
       extraBedPrice: 0,
     });
-  };
+    setTypeFormErrors({});
+  }, []);
 
-  const openEditRoomModal = (room: Room) => {
+  const openEditRoomModal = useCallback((room: Room) => {
     setSelectedRoom(room);
     setRoomFormData({
       roomNumber: room.roomNumber,
       roomTypeId: room.roomTypeId,
       floor: room.floor,
       viewType: room.viewType,
-      status: room.status as any,
+      status: room.status,
     });
+    setRoomFormErrors({});
     setShowEditRoomModal(true);
-  };
+  }, []);
 
-  const getRoomTypeName = (typeId: string) => {
-    return roomTypes.find(t => t.id === typeId)?.name || 'Unknown';
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CLEAN': return 'bg-green-100 text-green-800';
-      case 'DIRTY': return 'bg-yellow-100 text-yellow-800';
-      case 'OCCUPIED': return 'bg-blue-100 text-blue-800';
-      case 'MAINTENANCE': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleRoomFormChange = useCallback((field: keyof ValidationRoomFormData, value: string | number) => {
+    setRoomFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (roomFormErrors[field]) {
+      setRoomFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
-  };
+  }, [roomFormErrors]);
 
-  const filteredRooms = rooms.filter(room => {
-    const matchesSearch = room.roomNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || room.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleTypeFormChange = useCallback((field: keyof ValidationRoomTypeFormData, value: string | number | boolean) => {
+    setTypeFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (typeFormErrors[field]) {
+      setTypeFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [typeFormErrors]);
 
-  const roomStats = {
-    total: rooms.length,
-    clean: rooms.filter(r => r.status === 'CLEAN').length,
-    dirty: rooms.filter(r => r.status === 'DIRTY').length,
-    occupied: rooms.filter(r => r.status === 'OCCUPIED').length,
-    maintenance: rooms.filter(r => r.status === 'MAINTENANCE').length,
-  };
+  const handleCloseRoomModal = useCallback(() => {
+    setShowCreateRoomModal(false);
+    setShowEditRoomModal(false);
+    setSelectedRoom(null);
+    resetRoomForm();
+  }, [resetRoomForm]);
+
+  const handleCloseTypeModal = useCallback(() => {
+    setShowCreateTypeModal(false);
+    resetTypeForm();
+  }, [resetTypeForm]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -181,9 +310,12 @@ export default function RoomsManagementPage() {
           <h1 className="text-3xl font-bold text-gray-900">Rooms Management</h1>
           <p className="text-gray-600 mt-1">Manage rooms and room types</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="tablist">
           <button
             onClick={() => setActiveTab('rooms')}
+            role="tab"
+            aria-selected={activeTab === 'rooms'}
+            aria-controls="rooms-panel"
             className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'rooms' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
@@ -192,6 +324,9 @@ export default function RoomsManagementPage() {
           </button>
           <button
             onClick={() => setActiveTab('types')}
+            role="tab"
+            aria-selected={activeTab === 'types'}
+            aria-controls="types-panel"
             className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'types' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
@@ -202,357 +337,210 @@ export default function RoomsManagementPage() {
       </div>
 
       {activeTab === 'rooms' && (
-        <>
-          <div className="grid grid-cols-5 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <p className="text-sm text-gray-600">Total Rooms</p>
-              <p className="text-2xl font-bold text-gray-900">{roomStats.total}</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
-              <p className="text-sm text-green-700">Clean</p>
-              <p className="text-2xl font-bold text-green-900">{roomStats.clean}</p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200">
-              <p className="text-sm text-yellow-700">Dirty</p>
-              <p className="text-2xl font-bold text-yellow-900">{roomStats.dirty}</p>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
-              <p className="text-sm text-blue-700">Occupied</p>
-              <p className="text-2xl font-bold text-blue-900">{roomStats.occupied}</p>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg shadow-sm border border-red-200">
-              <p className="text-sm text-red-700">Maintenance</p>
-              <p className="text-2xl font-bold text-red-900">{roomStats.maintenance}</p>
-            </div>
-          </div>
+        <div role="tabpanel" id="rooms-panel" aria-labelledby="rooms-tab">
+          <RoomStats {...roomStats} />
 
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Search by room number..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                aria-label="Search rooms by room number"
               />
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value as RoomStatus | 'ALL')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              aria-label="Filter rooms by status"
             >
-              <option value="ALL">All Status</option>
-              <option value="CLEAN">Clean</option>
-              <option value="DIRTY">Dirty</option>
-              <option value="OCCUPIED">Occupied</option>
-              <option value="MAINTENANCE">Maintenance</option>
+              {ROOM_STATUS_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
             <button
-              onClick={() => setShowCreateRoomModal(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              onClick={() => {
+                resetRoomForm();
+                setShowCreateRoomModal(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              aria-label="Add new room"
             >
-              <Plus size={20} />
+              <Plus size={20} aria-hidden="true" />
               Add Room
             </button>
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="text-center py-12" role="status" aria-live="polite">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" aria-label="Loading rooms"></div>
+            </div>
+          ) : rooms.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200" role="status">
+              <Inbox size={48} className="mx-auto text-gray-400 mb-4" aria-hidden="true" />
+              <p className="text-gray-600 text-lg font-medium">No rooms found</p>
+              <p className="text-gray-500 text-sm mt-1">
+                {searchInput || statusFilter !== 'ALL' 
+                  ? 'Try adjusting your search or filter criteria' 
+                  : 'Get started by adding your first room'}
+              </p>
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {filteredRooms.map((room) => (
-                <div key={room.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2">
-                      <DoorOpen className="text-blue-600" size={20} />
-                      <span className="text-lg font-bold text-gray-900">{room.roomNumber}</span>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(room.status)}`}>
-                      {room.status}
-                    </span>
+            <>
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {rooms.map((room) => (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    roomTypeName={getRoomTypeName(room.roomTypeId)}
+                    onEdit={openEditRoomModal}
+                    onDelete={(id) => setDeleteRoomConfirm({ isOpen: true, roomId: id })}
+                  />
+                ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} rooms
                   </div>
-                  <div className="space-y-1 text-sm mb-3">
-                    <p className="text-gray-600">Type: <span className="font-medium text-gray-900">{getRoomTypeName(room.roomTypeId)}</span></p>
-                    <p className="text-gray-600">Floor: <span className="font-medium text-gray-900">{room.floor}</span></p>
-                    <p className="text-gray-600">View: <span className="font-medium text-gray-900">{room.viewType}</span></p>
-                  </div>
-                  {room.outOfOrderReason && (
-                    <div className="flex items-start gap-2 p-2 bg-red-50 rounded text-xs text-red-700 mb-3">
-                      <AlertCircle size={14} className="mt-0.5" />
-                      <span>{room.outOfOrderReason}</span>
-                    </div>
-                  )}
-                  <div className="flex gap-2 pt-3 border-t border-gray-200">
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => openEditRoomModal(room)}
-                      className="flex-1 px-2 py-1 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded text-sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Previous page"
                     >
-                      <Edit2 size={14} className="inline mr-1" />
-                      Edit
+                      <ChevronLeft size={20} />
                     </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (page <= 3) {
+                          pageNum = i + 1;
+                        } else if (page >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = page - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              page === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                            aria-label={`Go to page ${pageNum}`}
+                            aria-current={page === pageNum ? 'page' : undefined}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button
-                      onClick={() => handleDeleteRoom(room.id)}
-                      className="px-2 py-1 text-red-600 bg-red-50 hover:bg-red-100 rounded"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Next page"
                     >
-                      <Trash2 size={14} />
+                      <ChevronRight size={20} />
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
-        </>
+        </div>
       )}
 
       {activeTab === 'types' && (
-        <>
+        <div role="tabpanel" id="types-panel" aria-labelledby="types-tab">
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">{roomTypes.length} room types configured</p>
             <button
-              onClick={() => setShowCreateTypeModal(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              onClick={() => {
+                resetTypeForm();
+                setShowCreateTypeModal(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              aria-label="Add new room type"
             >
-              <Plus size={20} />
+              <Plus size={20} aria-hidden="true" />
               Add Room Type
             </button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {roomTypes.map((type) => (
-              <div key={type.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <Bed className="text-blue-600" size={24} />
-                    <h3 className="text-xl font-semibold text-gray-900">{type.name}</h3>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteRoomType(type.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-gray-600">Base Price</p>
-                    <p className="font-semibold text-gray-900">₹{type.basePrice.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Capacity</p>
-                    <p className="font-semibold text-gray-900">{type.capacity} guests</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Max Adults</p>
-                    <p className="font-semibold text-gray-900">{type.maxAdults}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Max Children</p>
-                    <p className="font-semibold text-gray-900">{type.maxChildren}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Extra Bed</p>
-                    <p className="font-semibold text-gray-900">{type.extraBedAllowed ? 'Yes' : 'No'}</p>
-                  </div>
-                  {type.extraBedAllowed && type.extraBedPrice && (
-                    <div>
-                      <p className="text-gray-600">Extra Bed Price</p>
-                      <p className="font-semibold text-gray-900">₹{type.extraBedPrice.toLocaleString()}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {(showCreateRoomModal || showEditRoomModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">{showCreateRoomModal ? 'Create New Room' : 'Edit Room'}</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                <input
-                  type="text"
-                  value={roomFormData.roomNumber}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, roomNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 101"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                <select
-                  value={roomFormData.roomTypeId}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, roomTypeId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select room type</option>
-                  {roomTypes.map(type => (
-                    <option key={type.id} value={type.id}>{type.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Floor</label>
-                <input
-                  type="number"
-                  value={roomFormData.floor}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, floor: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">View Type</label>
-                <select
-                  value={roomFormData.viewType}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, viewType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="CITY_VIEW">City View</option>
-                  <option value="SEA_VIEW">Sea View</option>
-                  <option value="GARDEN_VIEW">Garden View</option>
-                  <option value="POOL_VIEW">Pool View</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={roomFormData.status}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, status: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="CLEAN">Clean</option>
-                  <option value="DIRTY">Dirty</option>
-                  <option value="OCCUPIED">Occupied</option>
-                  <option value="MAINTENANCE">Maintenance</option>
-                </select>
-              </div>
+          {roomTypes.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200" role="status">
+              <Inbox size={48} className="mx-auto text-gray-400 mb-4" aria-hidden="true" />
+              <p className="text-gray-600 text-lg font-medium">No room types configured</p>
+              <p className="text-gray-500 text-sm mt-1">Get started by adding your first room type</p>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={showCreateRoomModal ? handleCreateRoom : handleUpdateRoom}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                {showCreateRoomModal ? 'Create' : 'Update'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateRoomModal(false);
-                  setShowEditRoomModal(false);
-                  setSelectedRoom(null);
-                  resetRoomForm();
-                }}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {roomTypes.map((type) => (
+                <RoomTypeCard
+                  key={type.id}
+                  type={type}
+                  formatPrice={format}
+                  onDelete={(id) => setDeleteTypeConfirm({ isOpen: true, typeId: id })}
+                />
+              ))}
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {showCreateTypeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Create Room Type</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type Name</label>
-                <input
-                  type="text"
-                  value={typeFormData.name}
-                  onChange={(e) => setTypeFormData({ ...typeFormData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Deluxe Suite"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
-                <input
-                  type="number"
-                  value={typeFormData.basePrice}
-                  onChange={(e) => setTypeFormData({ ...typeFormData, basePrice: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-                  <input
-                    type="number"
-                    value={typeFormData.capacity}
-                    onChange={(e) => setTypeFormData({ ...typeFormData, capacity: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Adults</label>
-                  <input
-                    type="number"
-                    value={typeFormData.maxAdults}
-                    onChange={(e) => setTypeFormData({ ...typeFormData, maxAdults: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Children</label>
-                <input
-                  type="number"
-                  value={typeFormData.maxChildren}
-                  onChange={(e) => setTypeFormData({ ...typeFormData, maxChildren: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="extraBed"
-                  checked={typeFormData.extraBedAllowed}
-                  onChange={(e) => setTypeFormData({ ...typeFormData, extraBedAllowed: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="extraBed" className="ml-2 text-sm font-medium text-gray-700">
-                  Extra Bed Allowed
-                </label>
-              </div>
-              {typeFormData.extraBedAllowed && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Extra Bed Price (₹)</label>
-                  <input
-                    type="number"
-                    value={typeFormData.extraBedPrice}
-                    onChange={(e) => setTypeFormData({ ...typeFormData, extraBedPrice: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleCreateRoomType}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Create
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateTypeModal(false);
-                  resetTypeForm();
-                }}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RoomFormModal
+        isOpen={showCreateRoomModal || showEditRoomModal}
+        isEdit={showEditRoomModal}
+        formData={roomFormData}
+        roomTypes={roomTypes}
+        isLoading={createRoomMutation.isPending || updateRoomMutation.isPending}
+        errors={roomFormErrors}
+        onChange={handleRoomFormChange}
+        onSubmit={showCreateRoomModal ? handleCreateRoom : handleUpdateRoom}
+        onClose={handleCloseRoomModal}
+      />
+
+      <RoomTypeFormModal
+        isOpen={showCreateTypeModal}
+        formData={typeFormData}
+        isLoading={createRoomTypeMutation.isPending}
+        errors={typeFormErrors}
+        onChange={handleTypeFormChange}
+        onSubmit={handleCreateRoomType}
+        onClose={handleCloseTypeModal}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteRoomConfirm.isOpen}
+        title="Delete Room"
+        description="Are you sure you want to delete this room? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteRoom}
+        onCancel={() => setDeleteRoomConfirm({ isOpen: false, roomId: null })}
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={deleteTypeConfirm.isOpen}
+        title="Delete Room Type"
+        description="Are you sure you want to delete this room type? All rooms of this type will be affected."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteRoomType}
+        onCancel={() => setDeleteTypeConfirm({ isOpen: false, typeId: null })}
+        variant="danger"
+      />
     </div>
   );
 }

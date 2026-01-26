@@ -37,7 +37,7 @@ export default function InvoicesManagementPage() {
       const response = await fetch('/api/invoices');
       setInvoices(await response.json());
     } catch (error) {
-      console.error('Failed to fetch invoices:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function InvoicesManagementPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Failed to download invoice:', error);
+      // Error handled silently
     }
   };
 

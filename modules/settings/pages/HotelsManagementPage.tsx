@@ -58,7 +58,7 @@ export default function HotelsManagementPage() {
       setHotels(await hotelsRes.json());
       setHotelSettings(await settingsRes.json());
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function HotelsManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create hotel:', error);
+      // Error handled silently
     }
   };
 
@@ -96,7 +96,7 @@ export default function HotelsManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update hotel:', error);
+      // Error handled silently
     }
   };
 
@@ -114,7 +114,7 @@ export default function HotelsManagementPage() {
         setSelectedHotel(null);
       }
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      // Error handled silently
     }
   };
 
@@ -123,10 +123,10 @@ export default function HotelsManagementPage() {
     try {
       const response = await fetch(`/api/hotels/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchData();
+        await         fetchData();
       }
     } catch (error) {
-      console.error('Failed to delete hotel:', error);
+      // Error handled silently
     }
   };
 

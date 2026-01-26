@@ -4,13 +4,44 @@ import { X, ShieldCheck, CreditCard, Clock, Calendar, Download, AlertCircle, Tre
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settlement } from '../settlements.types';
 import { SettlementStatusBadge } from './SettlementStatusBadge';
+import { useCurrency } from '../../../providers/CurrencyProvider';
 
 interface Props {
   settlement: Settlement | null;
   onClose: () => void;
 }
 
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return 'T+2 Working Days';
+  try {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return dateString;
+  }
+};
+
+const formatDateTime = (dateString: string | undefined): string => {
+  if (!dateString) return '—';
+  try {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  } catch {
+    return dateString;
+  }
+};
+
 export const SettlementDetailsDrawer: React.FC<Props> = ({ settlement, onClose }) => {
+  const { format } = useCurrency();
+  
   if (!settlement) return null;
 
   return (
@@ -47,7 +78,7 @@ export const SettlementDetailsDrawer: React.FC<Props> = ({ settlement, onClose }
               <div className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-3xl shadow-xl">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Net Payout</p>
-                  <h3 className="text-3xl font-black">{settlement.currency} {settlement.netAmount.toFixed(2)}</h3>
+                  <h3 className="text-3xl font-black">{format(settlement.netAmount)}</h3>
                 </div>
                 <SettlementStatusBadge status={settlement.status} />
               </div>
@@ -55,23 +86,23 @@ export const SettlementDetailsDrawer: React.FC<Props> = ({ settlement, onClose }
               <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 font-medium">Gross Revenue</span>
-                  <span className="font-bold text-slate-900">{settlement.currency} {settlement.grossAmount.toFixed(2)}</span>
+                  <span className="font-bold text-slate-900">{format(settlement.grossAmount)}</span>
                 </div>
                 
                 <div className="space-y-2 pt-2 border-t border-slate-200/60">
                    <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400 flex items-center gap-1.5"><TrendingDown size={14} className="text-rose-400" /> Channel Commission</span>
-                      <span className="font-bold text-rose-600">-{settlement.currency} {settlement.commission.toFixed(2)}</span>
+                      <span className="font-bold text-rose-600">-{format(settlement.commission)}</span>
                    </div>
                    <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400 flex items-center gap-1.5"><CreditCard size={14} className="text-rose-400" /> Gateway Fees</span>
-                      <span className="font-bold text-rose-600">-{settlement.currency} {settlement.gatewayFee.toFixed(2)}</span>
+                      <span className="font-bold text-rose-600">-{format(settlement.gatewayFee)}</span>
                    </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
                    <span className="text-xs font-black text-slate-900 uppercase">Net Settled</span>
-                   <span className="text-lg font-black text-indigo-600">{settlement.currency} {settlement.netAmount.toFixed(2)}</span>
+                   <span className="text-lg font-black text-indigo-600">{format(settlement.netAmount)}</span>
                 </div>
               </div>
             </section>
@@ -99,7 +130,7 @@ export const SettlementDetailsDrawer: React.FC<Props> = ({ settlement, onClose }
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Transaction Date</p>
-                      <p className="text-sm font-bold text-slate-900">{settlement.createdAt}</p>
+                      <p className="text-sm font-bold text-slate-900">{formatDateTime(settlement.createdAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -110,7 +141,7 @@ export const SettlementDetailsDrawer: React.FC<Props> = ({ settlement, onClose }
                       <p className="text-[10px] font-bold text-slate-400 uppercase">
                         {settlement.status === 'SETTLED' ? 'Settled Date' : 'Expected Settlement'}
                       </p>
-                      <p className="text-sm font-bold text-slate-900">{settlement.settledAt || settlement.expectedAt || 'T+2 Working Days'}</p>
+                      <p className="text-sm font-bold text-slate-900">{formatDate(settlement.settledAt || settlement.expectedAt)}</p>
                     </div>
                   </div>
                </div>

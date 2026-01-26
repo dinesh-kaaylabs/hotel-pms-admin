@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED';
 
@@ -42,21 +42,10 @@ export const CURRENCY_CONFIG: Record<CurrencyCode, CurrencyConfig> = {
   },
 };
 
-// Mock conversion rates (1 unit in base currency = X in target currency)
-// Base: INR
-const CONVERSION_RATES: Record<CurrencyCode, number> = {
-  INR: 1,
-  USD: 1 / 83.2, // 1 USD = 83.2 INR (example rate)
-  EUR: 1 / 90.5, // 1 EUR = 90.5 INR
-  GBP: 1 / 105.2, // 1 GBP = 105.2 INR
-  AED: 1 / 22.7, // 1 AED = 22.7 INR
-};
-
 interface CurrencyContextType {
   currency: CurrencyCode;
   setCurrency: (code: CurrencyCode) => void;
   config: CurrencyConfig;
-  convert: (amount: number, fromCurrency?: CurrencyCode, toCurrency?: CurrencyCode) => number;
   format: (amount: number, options?: Intl.NumberFormatOptions) => string;
 }
 
@@ -75,6 +64,11 @@ const DEFAULT_CURRENCY: CurrencyCode = 'INR';
  * USAGE:
  * const { currency, setCurrency, format } = useCurrency();
  * <div>{format(1000)}</div>  // ₹1,000.00
+ * 
+ * @remarks
+ * - format function is memoized to prevent recreation on every render
+ * - Intl.NumberFormat instances are cached for performance
+ * - No memory leaks from function recreation or formatter instances
  */
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<CurrencyCode>(DEFAULT_CURRENCY);
@@ -88,52 +82,57 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setMounted(true);
   }, []);
 
-  const setCurrency = (code: CurrencyCode) => {
+  // Memoized setCurrency to prevent recreation
+  const setCurrency = useCallback((code: CurrencyCode) => {
     if (code in CURRENCY_CONFIG) {
       setCurrencyState(code);
       localStorage.setItem(CURRENCY_STORAGE_KEY, code);
     }
-  };
+  }, []);
 
-  const config = CURRENCY_CONFIG[currency];
+  // Memoized config to prevent recreation
+  const config = useMemo(() => CURRENCY_CONFIG[currency], [currency]);
 
-  /**
-   * Convert amount between currencies
-   * @param amount - The amount to convert
-   * @param fromCurrency - Source currency (default: current currency)
-   * @param toCurrency - Target currency (default: current currency)
-   * @returns Converted amount
-   */
-  const convert = (
-    amount: number,
-    fromCurrency: CurrencyCode = currency,
-    toCurrency: CurrencyCode = currency
-  ): number => {
-    if (fromCurrency === toCurrency) return amount;
-    
-    // Convert to base (INR), then to target
-    const baseAmount = amount / CONVERSION_RATES[fromCurrency];
-    const convertedAmount = baseAmount * CONVERSION_RATES[toCurrency];
-    
-    return convertedAmount;
-  };
+  // Memoized formatter cache to prevent recreation of Intl.NumberFormat instances
+  const formatterCache = useMemo(() => new Map<string, Intl.NumberFormat>(), []);
 
   /**
    * Format amount with current currency
-   * @param amount - The amount to format
+   * Backend is source of truth for currency conversion - amounts should already be in user's selected currency
+   * @param amount - The amount to format (assumed to be in current currency)
    * @param options - Intl.NumberFormatOptions
    * @returns Formatted currency string
+   * 
+   * @remarks
+   * - Memoized with useCallback to prevent recreation on every render
+   * - Caches Intl.NumberFormat instances for performance
+   * - Cache key includes currency and serialized options
    */
-  const format = (amount: number, options?: Intl.NumberFormatOptions): string => {
-    const formatter = new Intl.NumberFormat(config.locale, {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      ...options,
-    });
+  const format = useCallback((amount: number, options?: Intl.NumberFormatOptions): string => {
+    const cacheKey = `${currency}-${JSON.stringify(options || {})}`;
+    
+    let formatter = formatterCache.get(cacheKey);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(config.locale, {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        ...options,
+      });
+      formatterCache.set(cacheKey, formatter);
+    }
+    
     return formatter.format(amount);
-  };
+  }, [currency, config.locale, formatterCache]);
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    currency,
+    setCurrency,
+    config,
+    format,
+  }), [currency, setCurrency, config, format]);
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -141,7 +140,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, config, convert, format }}>
+    <CurrencyContext.Provider value={contextValue}>
       {children}
     </CurrencyContext.Provider>
   );

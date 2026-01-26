@@ -3,6 +3,7 @@ import { graphqlRequest } from '../../api/graphqlRequest';
 import { Room, RoomType, RoomInventory, BulkUpdateInventoryPayload } from './rooms.types';
 import { 
   ROOMS_QUERY,
+  ROOMS_PAGINATED_QUERY,
   CREATE_ROOM_MUTATION,
   UPDATE_ROOM_MUTATION,
   DELETE_ROOM_MUTATION,
@@ -11,9 +12,29 @@ import {
   UPDATE_ROOM_TYPE_MUTATION,
   DELETE_ROOM_TYPE_MUTATION,
   ROOM_INVENTORY_QUERY, 
-  BULK_UPDATE_INVENTORY_MUTATION 
+  BULK_UPDATE_INVENTORY_MUTATION,
+  ROOM_STATS_QUERY
 } from '../../graphql/room.gql';
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface RoomsQueryParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  status?: string;
+  hotelId: string | null;
+}
+
+/**
+ * Legacy hook - loads all rooms (for backward compatibility)
+ * @deprecated Use useRoomsPaginated for better performance
+ */
 export const useRooms = () => {
   return useQuery<Room[]>({
     queryKey: ['rooms'],
@@ -24,89 +45,265 @@ export const useRooms = () => {
   });
 };
 
-export const useCreateRoom = () => {
+/**
+ * Paginated rooms query with hotel-specific caching and server-side filtering
+ * Query keys are hotel-specific to prevent cache collisions in multi-tab scenarios
+ */
+export const useRoomsPaginated = (params: RoomsQueryParams) => {
+  const { hotelId, page, pageSize, search, status } = params;
+  
+  return useQuery<PaginatedResponse<Room>>({
+    queryKey: ['rooms', hotelId, { page, pageSize, search, status }],
+    queryFn: async () => {
+      // Fallback to legacy query if pagination not supported yet
+      try {
+        const data = await graphqlRequest<{ roomsPaginated: PaginatedResponse<Room> }>(
+          ROOMS_PAGINATED_QUERY,
+          { page, pageSize, search: search || null, status: status || null }
+        );
+        return data.roomsPaginated;
+      } catch (err: any) {
+        // If paginated query fails, fallback to legacy query and paginate client-side
+        // This allows gradual backend migration
+        if (err.extensions?.code === 'FIELD_NOT_FOUND' || err.message?.includes('roomsPaginated')) {
+          const data = await graphqlRequest<{ rooms: Room[] }>(ROOMS_QUERY);
+          const filtered = data.rooms.filter(room => {
+            const matchesSearch = !search || room.roomNumber.toLowerCase().includes(search.toLowerCase());
+            const matchesStatus = !status || status === 'ALL' || room.status === status;
+            return matchesSearch && matchesStatus;
+          });
+          const start = (page - 1) * pageSize;
+          const end = start + pageSize;
+          return {
+            data: filtered.slice(start, end),
+            totalCount: filtered.length,
+            page,
+            pageSize,
+          };
+        }
+        throw err;
+      }
+    },
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
+    staleTime: 1000 * 30, // 30 seconds - rooms don't change frequently
+  });
+};
+
+export const useCreateRoom = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<Room>) => {
       const data = await graphqlRequest<{ createRoom: Room }>(CREATE_ROOM_MUTATION, { input });
       return data.createRoom;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    onSuccess: (newRoom) => {
+      // Invalidate paginated room queries for this hotel
+      queryClient.invalidateQueries({ 
+        queryKey: ['rooms', hotelId],
+        exact: false 
+      });
+      
+      // Invalidate related queries that depend on room count/stats
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-stats', hotelId],
+        exact: true 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-inventory-summary', hotelId],
+        exact: false 
+      });
     },
   });
 };
 
-export const useUpdateRoom = () => {
+export const useUpdateRoom = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<Room> }) => {
       const data = await graphqlRequest<{ updateRoom: Room }>(UPDATE_ROOM_MUTATION, { id, input });
       return data.updateRoom;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    onMutate: async ({ id, input }) => {
+      // Cancel outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['rooms', hotelId] });
+      
+      // Snapshot previous value for rollback
+      const previousRooms = queryClient.getQueriesData<PaginatedResponse<Room>>({ 
+        queryKey: ['rooms', hotelId] 
+      });
+      
+      // Optimistically update with timestamp for conflict detection
+      const updateTimestamp = Date.now();
+      queryClient.setQueriesData<PaginatedResponse<Room>>(
+        { queryKey: ['rooms', hotelId] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(room => 
+              room.id === id ? { ...room, ...input, _optimisticUpdate: updateTimestamp } : room
+            ),
+          };
+        }
+      );
+      
+      return { previousRooms, updateTimestamp };
+    },
+    onError: (err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousRooms) {
+        context.previousRooms.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Update failed';
+      console.error('Room update failed, changes reverted:', errorMessage);
+    },
+    onSuccess: (updatedRoom, _variables, context) => {
+      // Update cache with server response (removes optimistic flag)
+      queryClient.setQueriesData<PaginatedResponse<Room>>(
+        { queryKey: ['rooms', hotelId] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(room => 
+              room.id === updatedRoom.id ? updatedRoom : room
+            ),
+          };
+        }
+      );
+      
+      // Only invalidate related queries, not the main rooms query
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-stats', hotelId],
+        exact: true 
+      });
     },
   });
 };
 
-export const useDeleteRoom = () => {
+export const useDeleteRoom = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       const data = await graphqlRequest<{ deleteRoom: { success: boolean } }>(DELETE_ROOM_MUTATION, { id });
       return data.deleteRoom;
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['rooms', hotelId] });
+      
+      const previousRooms = queryClient.getQueriesData<PaginatedResponse<Room>>({ 
+        queryKey: ['rooms', hotelId] 
+      });
+      
+      // Optimistically remove room
+      queryClient.setQueriesData<PaginatedResponse<Room>>(
+        { queryKey: ['rooms', hotelId] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.filter(room => room.id !== id),
+            totalCount: Math.max(0, old.totalCount - 1),
+          };
+        }
+      );
+      
+      return { previousRooms };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousRooms) {
+        context.previousRooms.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Delete failed';
+      console.error('Room deletion failed, changes reverted:', errorMessage);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      // Only invalidate stats, not the main rooms query (already updated optimistically)
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-stats', hotelId],
+        exact: true 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-inventory-summary', hotelId],
+        exact: false 
+      });
     },
   });
 };
 
-export const useRoomTypes = () => {
+export const useRoomTypes = (hotelId: string | null) => {
   return useQuery<RoomType[]>({
-    queryKey: ['room-types'],
+    queryKey: ['room-types', hotelId],
     queryFn: async () => {
       const data = await graphqlRequest<{ roomTypes: RoomType[] }>(ROOM_TYPES_QUERY);
       return data.roomTypes;
     },
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
+    staleTime: 1000 * 60 * 5, // 5 minutes - room types change infrequently
   });
 };
 
-export const useCreateRoomType = () => {
+export const useCreateRoomType = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<RoomType>) => {
       const data = await graphqlRequest<{ createRoomType: RoomType }>(CREATE_ROOM_TYPE_MUTATION, { input });
       return data.createRoomType;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+    onSuccess: (newType) => {
+      // Update cache directly instead of invalidating
+      queryClient.setQueryData<RoomType[]>(
+        ['room-types', hotelId],
+        (old) => old ? [...old, newType] : [newType]
+      );
     },
   });
 };
 
-export const useUpdateRoomType = () => {
+export const useUpdateRoomType = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<RoomType> }) => {
       return graphqlRequest<{ updateRoomType: { success: boolean } }>(UPDATE_ROOM_TYPE_MUTATION, { id, input });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      // Only invalidate room-types for this hotel
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-types', hotelId],
+        exact: false 
+      });
     },
   });
 };
 
-export const useDeleteRoomType = () => {
+export const useDeleteRoomType = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const data = await graphqlRequest<{ deleteRoomType: { success: boolean } }>(DELETE_ROOM_TYPE_MUTATION, { id });
+      // Backend MUST validate:
+      // 1. No rooms exist with this roomTypeId
+      // 2. No active/future bookings reference this roomTypeId
+      // 3. Return clear error message if deletion blocked
+      const data = await graphqlRequest<{ deleteRoomType: { success: boolean; message?: string } }>(DELETE_ROOM_TYPE_MUTATION, { id });
       return data.deleteRoomType;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-types', hotelId],
+        exact: false 
+      });
+      queryClient.invalidateQueries({ queryKey: ['room-types'], exact: true });
+      // Also invalidate rooms since they reference room types
+      queryClient.invalidateQueries({ 
+        queryKey: ['rooms', hotelId],
+        exact: false 
+      });
     },
   });
 };
@@ -154,5 +351,66 @@ export const useRoomInventoryAdvanced = (filters: {
       return data.roomInventoryAdvanced;
     },
     enabled: !!filters.startDate && !!filters.endDate,
+  });
+};
+
+/**
+ * Hook to get room statistics (counts by status)
+ * Uses dedicated backend endpoint for accurate counts across all rooms
+ */
+export const useRoomStats = (hotelId: string | null) => {
+  return useQuery<{
+    total: number;
+    clean: number;
+    dirty: number;
+    occupied: number;
+    maintenance: number;
+    available: number;
+  }>({
+    queryKey: ['room-stats', hotelId],
+    queryFn: async () => {
+      const data = await graphqlRequest<{ roomStats: {
+        total: number;
+        clean: number;
+        dirty: number;
+        occupied: number;
+        maintenance: number;
+        available: number;
+      } }>(ROOM_STATS_QUERY);
+      return data.roomStats;
+    },
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
+    staleTime: 1000 * 30, // 30 seconds - stats don't change frequently
+  });
+};
+
+/**
+ * Hook to get room inventory summary by room type for dashboard widget
+ * Groups rooms by type and calculates available vs total
+ * @deprecated This hook should use paginated rooms or a dedicated stats endpoint
+ */
+export const useRoomInventorySummary = (hotelId: string | null) => {
+  const { data: rooms = [] } = useRooms(); // Legacy hook - consider migrating to stats endpoint
+  const { data: roomTypes = [] } = useRoomTypes(hotelId);
+
+  return useQuery({
+    queryKey: ['room-inventory-summary', hotelId, rooms.length, roomTypes.length],
+    queryFn: () => {
+      // Group rooms by type and calculate availability
+      const summary = roomTypes.map(type => {
+        const typeRooms = rooms.filter(r => r.roomTypeId === type.id);
+        const availableRooms = typeRooms.filter(r => r.status === 'CLEAN' || r.status === 'AVAILABLE');
+        
+        return {
+          type: type.name,
+          count: availableRooms.length,
+          total: typeRooms.length,
+          roomTypeId: type.id,
+        };
+      }).filter(item => item.total > 0); // Only show types that have rooms
+
+      return summary;
+    },
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '' && rooms.length > 0 && roomTypes.length > 0,
   });
 };

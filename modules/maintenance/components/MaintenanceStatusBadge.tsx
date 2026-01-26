@@ -9,8 +9,10 @@ const CONFIG: Record<MaintenanceStatus, { label: string; class: string; icon: an
   RESOLVED: { label: 'Resolved', class: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: CheckCircle2 },
 };
 
-export const MaintenanceStatusBadge: React.FC<{ status: MaintenanceStatus }> = ({ status }) => {
-  const config = CONFIG[status];
+export const MaintenanceStatusBadge: React.FC<{ status?: MaintenanceStatus }> = ({ status }) => {
+  // Default to OPEN if status is undefined or not found in CONFIG
+  const safeStatus = (status && status in CONFIG) ? status : 'OPEN';
+  const config = CONFIG[safeStatus];
   const Icon = config.icon;
 
   return (

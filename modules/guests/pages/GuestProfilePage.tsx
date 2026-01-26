@@ -16,8 +16,8 @@ export const GuestProfilePage: React.FC = () => {
   const [isNoteDrawerOpen, setNoteDrawerOpen] = useState(false);
 
   const { data: guest, isLoading: isProfileLoading } = useGuestProfile(id);
-  const { data: stays, isLoading: isStaysLoading } = useGuestStays(id);
-  const { data: notes, isLoading: isNotesLoading } = useGuestNotes(id);
+  const { data: stays, isLoading: isStaysLoading } = useGuestStays(id || undefined);
+  const { data: notes, isLoading: isNotesLoading } = useGuestNotes(id || undefined);
 
   const canManage = user?.role === 'SUPER_ADMIN' || user?.role === 'HOTEL_ADMIN';
 
@@ -83,7 +83,7 @@ export const GuestProfilePage: React.FC = () => {
                       <ShieldCheck size={16} className="text-indigo-300" />
                       <p className="text-[10px] font-black uppercase tracking-widest">Handover Status</p>
                    </div>
-                   <p className="text-xs font-medium leading-relaxed">Guest is currently marked as {guest.tags.includes('VIP') ? 'High Priority' : 'Standard Priority'}. Check for active notes before check-in.</p>
+                   <p className="text-xs font-medium leading-relaxed">Guest is currently marked as {guest.tags && guest.tags.includes('VIP') ? 'High Priority' : 'Standard Priority'}. Check for active notes before check-in.</p>
                 </div>
               </div>
             </section>

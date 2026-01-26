@@ -2,7 +2,24 @@
 export const INVOICES_QUERY = `
   query Invoices($filters: InvoiceFilters) {
     invoices(filters: $filters) {
-      id invoiceNumber bookingId bookingNumber guestName gstin status totalAmount currency issuedAt pdfUrl
+      id
+      invoiceNumber
+      bookingId
+      bookingNumber
+      guestName
+      gstin
+      status
+      subtotal
+      gst {
+        cgst
+        sgst
+        igst
+        gstRate
+      }
+      totalAmount
+      currency
+      issuedAt
+      pdfUrl
     }
   }
 `;
@@ -10,7 +27,24 @@ export const INVOICES_QUERY = `
 export const PAYMENTS_QUERY = `
   query Payments($filters: PaymentFilters) {
     payments(filters: $filters) {
-      id bookingId bookingNumber provider method status amount currency createdAt
+      id
+      hotelId
+      bookingId
+      bookingNumber
+      provider
+      method
+      status
+      amount
+      currency
+      paymentGatewayRef
+      settlementStatus
+      businessDate
+      createdAt
+      refunds {
+        amount
+        reason
+        date
+      }
     }
   }
 `;
