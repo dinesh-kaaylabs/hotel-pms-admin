@@ -84,7 +84,7 @@ export const useRoomsPaginated = (params: RoomsQueryParams) => {
         throw err;
       }
     },
-    enabled: !!hotelId && hotelId !== 'pending',
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
     staleTime: 1000 * 30, // 30 seconds - rooms don't change frequently
   });
 };
@@ -97,27 +97,21 @@ export const useCreateRoom = (hotelId: string | null) => {
       return data.createRoom;
     },
     onSuccess: (newRoom) => {
-      // Invalidate all room queries for this hotel
+      // Invalidate paginated room queries for this hotel
       queryClient.invalidateQueries({ 
         queryKey: ['rooms', hotelId],
         exact: false 
       });
-      // Also invalidate legacy query for backward compatibility
-      queryClient.invalidateQueries({ queryKey: ['rooms'], exact: true });
       
-      // Optimistic update: Add room to current page if it matches filters
-      queryClient.setQueriesData<PaginatedResponse<Room>>(
-        { queryKey: ['rooms', hotelId] },
-        (old) => {
-          if (!old) return old;
-          // Only add if it would appear on current page (simple check)
-          return {
-            ...old,
-            data: [...old.data, newRoom],
-            totalCount: old.totalCount + 1,
-          };
-        }
-      );
+      // Invalidate related queries that depend on room count/stats
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-stats', hotelId],
+        exact: true 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-inventory-summary', hotelId],
+        exact: false 
+      });
     },
   });
 };
@@ -130,7 +124,7 @@ export const useUpdateRoom = (hotelId: string | null) => {
       return data.updateRoom;
     },
     onMutate: async ({ id, input }) => {
-      // Cancel outgoing refetches
+      // Cancel outgoing refetches to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ['rooms', hotelId] });
       
       // Snapshot previous value for rollback
@@ -138,7 +132,8 @@ export const useUpdateRoom = (hotelId: string | null) => {
         queryKey: ['rooms', hotelId] 
       });
       
-      // Optimistically update
+      // Optimistically update with timestamp for conflict detection
+      const updateTimestamp = Date.now();
       queryClient.setQueriesData<PaginatedResponse<Room>>(
         { queryKey: ['rooms', hotelId] },
         (old) => {
@@ -146,13 +141,13 @@ export const useUpdateRoom = (hotelId: string | null) => {
           return {
             ...old,
             data: old.data.map(room => 
-              room.id === id ? { ...room, ...input } : room
+              room.id === id ? { ...room, ...input, _optimisticUpdate: updateTimestamp } : room
             ),
           };
         }
       );
       
-      return { previousRooms };
+      return { previousRooms, updateTimestamp };
     },
     onError: (err, _variables, context) => {
       // Rollback on error
@@ -162,19 +157,29 @@ export const useUpdateRoom = (hotelId: string | null) => {
         });
       }
       
-      // Notify user that optimistic update was reverted
-      // Note: Toast hook should be used in component that calls this mutation
-      // This error will be caught by the component's error handler
       const errorMessage = err instanceof Error ? err.message : 'Update failed';
       console.error('Room update failed, changes reverted:', errorMessage);
     },
-    onSuccess: () => {
-      // Invalidate to ensure consistency
+    onSuccess: (updatedRoom, _variables, context) => {
+      // Update cache with server response (removes optimistic flag)
+      queryClient.setQueriesData<PaginatedResponse<Room>>(
+        { queryKey: ['rooms', hotelId] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(room => 
+              room.id === updatedRoom.id ? updatedRoom : room
+            ),
+          };
+        }
+      );
+      
+      // Only invalidate related queries, not the main rooms query
       queryClient.invalidateQueries({ 
-        queryKey: ['rooms', hotelId],
-        exact: false 
+        queryKey: ['room-stats', hotelId],
+        exact: true 
       });
-      queryClient.invalidateQueries({ queryKey: ['rooms'], exact: true });
     },
   });
 };
@@ -215,16 +220,19 @@ export const useDeleteRoom = (hotelId: string | null) => {
         });
       }
       
-      // Notify user that optimistic update was reverted
       const errorMessage = err instanceof Error ? err.message : 'Delete failed';
       console.error('Room deletion failed, changes reverted:', errorMessage);
     },
     onSuccess: () => {
+      // Only invalidate stats, not the main rooms query (already updated optimistically)
       queryClient.invalidateQueries({ 
-        queryKey: ['rooms', hotelId],
+        queryKey: ['room-stats', hotelId],
+        exact: true 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-inventory-summary', hotelId],
         exact: false 
       });
-      queryClient.invalidateQueries({ queryKey: ['rooms'], exact: true });
     },
   });
 };
@@ -236,7 +244,7 @@ export const useRoomTypes = (hotelId: string | null) => {
       const data = await graphqlRequest<{ roomTypes: RoomType[] }>(ROOM_TYPES_QUERY);
       return data.roomTypes;
     },
-    enabled: !!hotelId && hotelId !== 'pending',
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
     staleTime: 1000 * 60 * 5, // 5 minutes - room types change infrequently
   });
 };
@@ -249,13 +257,7 @@ export const useCreateRoomType = (hotelId: string | null) => {
       return data.createRoomType;
     },
     onSuccess: (newType) => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['room-types', hotelId],
-        exact: false 
-      });
-      queryClient.invalidateQueries({ queryKey: ['room-types'], exact: true });
-      
-      // Optimistic update
+      // Update cache directly instead of invalidating
       queryClient.setQueryData<RoomType[]>(
         ['room-types', hotelId],
         (old) => old ? [...old, newType] : [newType]
@@ -264,14 +266,18 @@ export const useCreateRoomType = (hotelId: string | null) => {
   });
 };
 
-export const useUpdateRoomType = () => {
+export const useUpdateRoomType = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<RoomType> }) => {
       return graphqlRequest<{ updateRoomType: { success: boolean } }>(UPDATE_ROOM_TYPE_MUTATION, { id, input });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      // Only invalidate room-types for this hotel
+      queryClient.invalidateQueries({ 
+        queryKey: ['room-types', hotelId],
+        exact: false 
+      });
     },
   });
 };
@@ -373,7 +379,7 @@ export const useRoomStats = (hotelId: string | null) => {
       } }>(ROOM_STATS_QUERY);
       return data.roomStats;
     },
-    enabled: !!hotelId && hotelId !== 'pending',
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '',
     staleTime: 1000 * 30, // 30 seconds - stats don't change frequently
   });
 };
@@ -405,6 +411,6 @@ export const useRoomInventorySummary = (hotelId: string | null) => {
 
       return summary;
     },
-    enabled: !!hotelId && hotelId !== 'pending' && rooms.length > 0 && roomTypes.length > 0,
+    enabled: !!hotelId && hotelId !== 'pending' && hotelId.trim() !== '' && rooms.length > 0 && roomTypes.length > 0,
   });
 };

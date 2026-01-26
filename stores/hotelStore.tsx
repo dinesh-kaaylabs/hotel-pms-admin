@@ -31,25 +31,38 @@ export const HotelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const hotel = hotels.find(h => h.id === hotelId);
     if (!hotel) return;
 
-    // 1. Update sessionStorage FIRST (synchronously)
+    // 1. Cancel all in-flight queries to prevent race conditions
+    await queryClient.cancelQueries();
+    
+    // 2. Update sessionStorage FIRST (synchronously)
     sessionStorage.setItem('pms_active_hotel_id', hotelId);
     
-    // 2. Update state (this triggers re-renders)
+    // 3. Update state (this triggers re-renders)
     setActiveHotelId(hotelId);
     
-    // 3. Wait for next tick to ensure sessionStorage is flushed
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
-    // 4. Now invalidate queries - they will use the new hotel ID
+    // 4. Invalidate ALL hotel-scoped queries (comprehensive list)
     queryClient.invalidateQueries({ 
       predicate: (query) => {
         const key = query.queryKey[0];
-        return ['bookings', 'rooms', 'payments', 'invoices', 'guests', 'housekeeping', 'maintenance', 'pricing', 'reports', 'settlements'].includes(key as string);
+        return [
+          'bookings', 'booking-pricing',
+          'rooms', 'room-types', 'room-stats', 'room-inventory', 'room-inventory-advanced', 'room-inventory-summary',
+          'payments', 
+          'invoices', 
+          'guests', 
+          'housekeeping', 
+          'maintenance', 
+          'pricing', 
+          'reports', 
+          'settlements',
+          'dashboard',
+          'branding'
+        ].includes(key as string);
       }
     });
     
-    // 5. Clear sensitive cache immediately
-    queryClient.removeQueries({ queryKey: ['me'] }); // Re-verify session context
+    // 5. Re-fetch user profile to verify hotel access
+    await queryClient.invalidateQueries({ queryKey: ['me'], refetchType: 'active' });
     
     success(`Switched context to ${hotel.name}`);
   }, [hotels, queryClient, success]);
@@ -87,14 +100,29 @@ export const useSyncUserHotels = (user: any) => {
     if (user && user.hotels?.length) {
       setHotels(user.hotels);
       
-      // Initialize default hotel if not set
-      if (activeHotelId === 'pending' || !activeHotelId) {
+      // Initialize default hotel if not set or invalid
+      if (activeHotelId === 'pending' || !activeHotelId || activeHotelId.trim() === '') {
         const defaultId = user.hotelId || user.hotels[0]?.id;
         if (defaultId) {
-          setActiveHotel(defaultId);
           sessionStorage.setItem('pms_active_hotel_id', defaultId);
+          setActiveHotel(defaultId);
+        }
+      } else {
+        // Verify current hotel ID is in user's authorized list
+        const isAuthorized = user.hotels.some(h => h.id === activeHotelId);
+        if (!isAuthorized) {
+          // Current hotel not authorized, switch to default
+          const defaultId = user.hotelId || user.hotels[0]?.id;
+          if (defaultId) {
+            sessionStorage.setItem('pms_active_hotel_id', defaultId);
+            setActiveHotel(defaultId);
+          }
         }
       }
+    } else if (user && (!user.hotels || user.hotels.length === 0)) {
+      // User has no hotels - clear hotel context
+      sessionStorage.removeItem('pms_active_hotel_id');
+      setActiveHotelId(null);
     }
   }, [user, setHotels, setActiveHotel, activeHotelId]);
 };

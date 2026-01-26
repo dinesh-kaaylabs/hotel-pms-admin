@@ -11,14 +11,28 @@ let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 let refreshPromise: Promise<any> | null = null;
 const MAX_REFRESH_ATTEMPTS = 3;
-const QUEUE_TIMEOUT = 10000; // 10 seconds
+const QUEUE_TIMEOUT = 35000; // 35 seconds (longer than request timeout)
 const REFRESH_COOLDOWN = 5000; // 5 seconds between refresh attempts
 let lastRefreshAttempt = 0;
+let refreshAttemptCount = 0;
+let sessionExpiredFired = false; // Prevent duplicate session expired events
 
 const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(graphqlClient(prom.config));
+    if (error) {
+      prom.reject(error);
+    } else {
+      // Verify hotel context hasn't changed during queue wait
+      const currentHotelId = sessionStorage.getItem('pms_active_hotel_id');
+      const requestHotelId = prom.config.headers['X-Hotel-Id'];
+      
+      if (currentHotelId && requestHotelId && currentHotelId !== requestHotelId) {
+        // Update request with current hotel context
+        prom.config.headers['X-Hotel-Id'] = currentHotelId;
+      }
+      
+      prom.resolve(graphqlClient(prom.config));
+    }
   });
   failedQueue = [];
 };
@@ -46,9 +60,12 @@ export const graphqlClient = axios.create({
 // Multi-tenant header injection via request interceptor
 graphqlClient.interceptors.request.use((config) => {
   const activeHotelId = sessionStorage.getItem('pms_active_hotel_id');
-  if (activeHotelId) {
+  
+  // Only add header if hotel ID is valid (not null, empty, or 'pending')
+  if (activeHotelId && activeHotelId !== 'pending' && activeHotelId.trim() !== '') {
     config.headers['X-Hotel-Id'] = activeHotelId;
   }
+  
   return config;
 });
 
@@ -70,17 +87,35 @@ graphqlClient.interceptors.response.use(
 
       if (isRefreshTokenOp) {
         processQueue(new Error('SESSION_EXPIRED'));
-        // Emit session expired event for app-level handling
-        window.dispatchEvent(new CustomEvent('auth:session-expired'));
+        // Emit session expired event for app-level handling (only once)
+        if (!sessionExpiredFired) {
+          sessionExpiredFired = true;
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          // Reset after 5 seconds to allow retry if needed
+          setTimeout(() => { sessionExpiredFired = false; }, 5000);
+        }
         refreshPromise = null;
+        isRefreshing = false;
+        refreshAttemptCount = 0;
         return Promise.reject(authError);
       }
 
       // Check cooldown period to prevent rapid refresh attempts
       const now = Date.now();
       const timeSinceLastRefresh = now - lastRefreshAttempt;
-      if (timeSinceLastRefresh < REFRESH_COOLDOWN && lastRefreshAttempt > 0) {
+      if (timeSinceLastRefresh < REFRESH_COOLDOWN && lastRefreshAttempt > 0 && refreshAttemptCount > 0) {
         return Promise.reject(new Error('Refresh cooldown active. Please wait.'));
+      }
+      
+      // Check if max attempts exceeded in recent time window
+      if (refreshAttemptCount >= MAX_REFRESH_ATTEMPTS) {
+        if (!sessionExpiredFired) {
+          sessionExpiredFired = true;
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          setTimeout(() => { sessionExpiredFired = false; }, 5000);
+        }
+        refreshAttemptCount = 0;
+        return Promise.reject(new Error('Maximum refresh attempts exceeded'));
       }
 
       // If refresh is already in progress, wait for it
@@ -110,6 +145,7 @@ graphqlClient.interceptors.response.use(
 
       isRefreshing = true;
       lastRefreshAttempt = now;
+      refreshAttemptCount++;
 
       // Trigger GraphQL-based token refresh (single promise shared by all concurrent requests)
       refreshPromise = graphqlClient.post('', {
@@ -117,6 +153,8 @@ graphqlClient.interceptors.response.use(
       })
       .then(({ data: refreshData }) => {
         if (refreshData.data?.refreshToken?.success) {
+          // Reset attempt counter on success
+          refreshAttemptCount = 0;
           processQueue(null);
           return graphqlClient(originalRequest);
         } else {
@@ -126,11 +164,15 @@ graphqlClient.interceptors.response.use(
       .catch((err) => {
         processQueue(err);
         
-        // Check if we've exceeded cooldown attempts (3 attempts in 15 seconds = session expired)
-        const attemptsSinceStart = Math.floor((now - lastRefreshAttempt) / REFRESH_COOLDOWN);
-        if (attemptsSinceStart >= MAX_REFRESH_ATTEMPTS) {
-          window.dispatchEvent(new CustomEvent('auth:session-expired'));
-          lastRefreshAttempt = 0; // Reset
+        // Check if we've exceeded max attempts
+        if (refreshAttemptCount >= MAX_REFRESH_ATTEMPTS) {
+          if (!sessionExpiredFired) {
+            sessionExpiredFired = true;
+            window.dispatchEvent(new CustomEvent('auth:session-expired'));
+            setTimeout(() => { sessionExpiredFired = false; }, 5000);
+          }
+          refreshAttemptCount = 0;
+          lastRefreshAttempt = 0;
         }
         
         throw err;

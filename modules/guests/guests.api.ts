@@ -40,7 +40,7 @@ export const useGuestStays = (guestId?: string) => {
       const data = await graphqlRequest<{ guestStays: GuestStay[] }>(GUEST_STAYS_QUERY, { guestId });
       return data.guestStays;
     },
-    enabled: true, // Always enabled, filtering happens server-side
+    enabled: !!guestId, // Only fetch when guestId is provided
   });
 };
 
@@ -51,7 +51,7 @@ export const useGuestNotes = (guestId?: string) => {
       const data = await graphqlRequest<{ guestNotes: GuestNote[] }>(GUEST_NOTES_QUERY, { guestId });
       return data.guestNotes;
     },
-    enabled: true, // Always enabled, filtering happens server-side
+    enabled: !!guestId, // Only fetch when guestId is provided
   });
 };
 
@@ -61,8 +61,12 @@ export const useAddGuestNote = () => {
     mutationFn: async ({ guestId, content }: { guestId: string; content: string }) => {
       return graphqlRequest<{ addGuestNote: GuestNote }>(ADD_GUEST_NOTE_MUTATION, { guestId, content });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guests', 'notes'] });
+    onSuccess: (newNote, variables) => {
+      // Only invalidate notes for this specific guest
+      queryClient.invalidateQueries({ 
+        queryKey: ['guests', 'notes', variables.guestId],
+        exact: true 
+      });
     },
   });
 };
@@ -87,8 +91,18 @@ export const useUpdateGuest = () => {
       const data = await graphqlRequest<{ updateGuest: Guest }>(UPDATE_GUEST_MUTATION, { id, input });
       return data.updateGuest;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guests'] });
+    onSuccess: (updatedGuest, variables) => {
+      // Update guest in list cache
+      queryClient.setQueriesData<Guest[]>(
+        { queryKey: ['guests'] },
+        (old) => {
+          if (!old) return old;
+          return old.map(guest => guest.id === variables.id ? updatedGuest : guest);
+        }
+      );
+      
+      // Update specific guest profile cache
+      queryClient.setQueryData(['guests', 'profile', variables.id], updatedGuest);
     },
   });
 };
