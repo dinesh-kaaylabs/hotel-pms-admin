@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Settings, Building, Users, Mail, FileText, CheckCircle, CreditCard, Receipt, Globe } from 'lucide-react';
+import { Settings, Building, Users, Mail, FileText, CheckCircle, CreditCard, Receipt, Globe, Building2 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 
 export const SettingsPage: React.FC = () => {
@@ -54,6 +54,18 @@ export const SettingsPage: React.FC = () => {
           >
             <CreditCard size={18} /> Subscription
           </NavLink>
+
+          {hasPermission('settings:view') && (
+            <NavLink
+              to="/settings/tenant-subscription"
+              className={({ isActive }) => `
+                flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                ${isActive ? 'bg-white border border-slate-200 text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100'}
+              `}
+            >
+              <Building2 size={18} /> Tenant Management
+            </NavLink>
+          )}
 
           <NavLink
             to="/settings/tax"

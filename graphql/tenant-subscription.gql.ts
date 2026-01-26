@@ -73,3 +73,56 @@ export const GET_BILLING_HISTORY = `
     }
   }
 `;
+
+export const GET_ALL_PLANS = `
+  query GetAllPlans {
+    plans {
+      id
+      name
+      maxHotels
+      maxUsers
+      price
+      billingCycle
+    }
+  }
+`;
+
+export const GET_ALL_TENANTS = `
+  query GetAllTenants {
+    tenants {
+      id
+      name
+      status
+      subscriptionId
+      createdAt
+      contactEmail
+      contactPhone
+      billingAddress
+    }
+  }
+`;
+
+export const GET_ALL_SUBSCRIPTIONS = `
+  query GetAllSubscriptions {
+    subscriptions {
+      id
+      tenantId
+      planId
+      status
+      amount
+      currentPeriodEnd
+    }
+  }
+`;
+
+export const GET_ALL_FEATURE_FLAGS = `
+  query GetAllFeatureFlags {
+    featureFlags {
+      id
+      key
+      name
+      defaultValue
+      tenantId
+    }
+  }
+`;

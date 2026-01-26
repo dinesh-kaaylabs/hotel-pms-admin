@@ -28,6 +28,7 @@ const SettingsPage = lazy(() => import('../modules/settings/pages/SettingsPage')
 const HotelSettingsPage = lazy(() => import('../modules/settings/pages/HotelSettingsPage').then(m => ({ default: m.HotelSettingsPage })));
 const UsersPage = lazy(() => import('../modules/settings/pages/UsersPage').then(m => ({ default: m.UsersPage })));
 const SubscriptionPage = lazy(() => import('../modules/settings/pages/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })));
+const TenantSubscriptionDashboardPage = lazy(() => import('../modules/settings/pages/TenantSubscriptionDashboardPage').then(m => ({ default: m.TenantSubscriptionDashboardPage })));
 const TaxConfigurationPage = lazy(() => import('../modules/settings/pages/TaxConfigurationPage').then(m => ({ default: m.TaxConfigurationPage })));
 const ChannelManagerPage = lazy(() => import('../modules/settings/pages/ChannelManagerPage').then(m => ({ default: m.ChannelManagerPage })));
 const PromotionsPage = lazy(() => import('../modules/pricing/pages/PromotionsPage').then(m => ({ default: m.PromotionsPage })));
@@ -204,6 +205,11 @@ export const AppRoutes: React.FC = () => {
               </RequireRole>
             } />
             <Route path="subscription" element={<SubscriptionPage />} />
+            <Route path="tenant-subscription" element={
+              <RequireRole permission="settings:view">
+                <TenantSubscriptionDashboardPage />
+              </RequireRole>
+            } />
             <Route path="tax" element={<TaxConfigurationPage />} />
             <Route path="channel-manager" element={<ChannelManagerPage />} />
             

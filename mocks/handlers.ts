@@ -1590,6 +1590,42 @@ export const handlers = [
     });
   }),
 
+  graphql.query('GetAllPlans', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        plans: tenantSubscriptionMockData.plans,
+      },
+    });
+  }),
+
+  graphql.query('GetAllTenants', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        tenants: tenantSubscriptionMockData.tenants,
+      },
+    });
+  }),
+
+  graphql.query('GetAllSubscriptions', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        subscriptions: tenantSubscriptionMockData.subscriptions,
+      },
+    });
+  }),
+
+  graphql.query('GetAllFeatureFlags', async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        featureFlags: tenantSubscriptionMockData.featureFlags,
+      },
+    });
+  }),
+
   // =========================================================================
   // PERMISSION SYSTEM
   // =========================================================================
