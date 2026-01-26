@@ -2,7 +2,20 @@
 export const GUESTS_QUERY = `
   query Guests($filters: GuestFilters) {
     guests(filters: $filters) {
-      id name phone email tags totalStays lifetimeValue currency
+      id
+      name
+      phone
+      email
+      idType
+      idNumber
+      nationality
+      preferences {
+        pillowType
+        smoking
+        dietaryNeeds
+      }
+      isVip
+      privacyLevel
     }
   }
 `;
@@ -10,31 +23,60 @@ export const GUESTS_QUERY = `
 export const GUEST_PROFILE_QUERY = `
   query GuestProfile($id: ID!) {
     guest(id: $id) {
-      id name phone email tags totalStays lifetimeValue currency
+      id
+      name
+      phone
+      email
+      idType
+      idNumber
+      nationality
+      preferences {
+        pillowType
+        smoking
+        dietaryNeeds
+      }
+      isVip
+      privacyLevel
     }
   }
 `;
 
 export const GUEST_STAYS_QUERY = `
-  query GuestStays($id: ID!) {
-    guestStays(guestId: $id) {
-      bookingId bookingNumber roomType checkInDate checkOutDate amountPaid status
+  query GuestStays {
+    guestStays {
+      id
+      guestId
+      hotelId
+      checkInDate
+      checkOutDate
+      roomNumber
+      totalSpent
     }
   }
 `;
 
 export const GUEST_NOTES_QUERY = `
-  query GuestNotes($id: ID!) {
-    guestNotes(guestId: $id) {
-      id note createdBy createdAt
+  query GuestNotes {
+    guestNotes {
+      id
+      guestId
+      hotelId
+      content
+      createdAt
+      userId
     }
   }
 `;
 
 export const ADD_GUEST_NOTE_MUTATION = `
-  mutation AddGuestNote($guestId: ID!, $note: String!) {
-    addGuestNote(guestId: $guestId, note: $note) {
-      id note createdBy createdAt
+  mutation AddGuestNote($guestId: ID!, $content: String!) {
+    addGuestNote(guestId: $guestId, content: $content) {
+      id
+      guestId
+      hotelId
+      content
+      createdAt
+      userId
     }
   }
 `;
@@ -42,7 +84,49 @@ export const ADD_GUEST_NOTE_MUTATION = `
 export const CREATE_GUEST_MUTATION = `
   mutation CreateGuest($input: CreateGuestInput!) {
     createGuest(input: $input) {
-      id name phone email
+      id
+      name
+      phone
+      email
+      idType
+      idNumber
+      nationality
+      preferences {
+        pillowType
+        smoking
+        dietaryNeeds
+      }
+      isVip
+      privacyLevel
+    }
+  }
+`;
+
+export const UPDATE_GUEST_MUTATION = `
+  mutation UpdateGuest($id: ID!, $input: UpdateGuestInput!) {
+    updateGuest(id: $id, input: $input) {
+      id
+      name
+      phone
+      email
+      idType
+      idNumber
+      nationality
+      preferences {
+        pillowType
+        smoking
+        dietaryNeeds
+      }
+      isVip
+      privacyLevel
+    }
+  }
+`;
+
+export const DELETE_GUEST_MUTATION = `
+  mutation DeleteGuest($id: ID!) {
+    deleteGuest(id: $id) {
+      success
     }
   }
 `;

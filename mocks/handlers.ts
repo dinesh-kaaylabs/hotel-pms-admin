@@ -274,6 +274,40 @@ export const handlers = [
     })
   ),
 
+  graphql.mutation('CreateRoom', ({ variables }) =>
+    HttpResponse.json({
+      data: {
+        createRoom: {
+          id: `r-new-${Date.now()}`,
+          hotelId: 'h-01',
+          lastCleanedAt: new Date().toISOString(),
+          lastInspectedAt: new Date().toISOString(),
+          ...variables.input
+        }
+      }
+    })
+  ),
+
+  graphql.mutation('UpdateRoom', ({ variables }) =>
+    HttpResponse.json({
+      data: {
+        updateRoom: {
+          id: variables.id,
+          hotelId: 'h-01',
+          ...variables.input
+        }
+      }
+    })
+  ),
+
+  graphql.mutation('DeleteRoom', () =>
+    HttpResponse.json({
+      data: {
+        deleteRoom: { success: true }
+      }
+    })
+  ),
+
   graphql.mutation('UpdateRoomStatus', () =>
     HttpResponse.json({
       data: {
@@ -290,10 +324,14 @@ export const handlers = [
     })
   ),
 
-  graphql.mutation('CreateRoomType', () =>
+  graphql.mutation('CreateRoomType', ({ variables }) =>
     HttpResponse.json({
       data: {
-        createRoomType: roomsMockData.newRoomType
+        createRoomType: {
+          id: `rt-new-${Date.now()}`,
+          hotelId: 'h-01',
+          ...variables.input
+        }
       }
     })
   ),
@@ -302,6 +340,14 @@ export const handlers = [
     HttpResponse.json({
       data: {
         updateRoomType: { success: true }
+      }
+    })
+  ),
+
+  graphql.mutation('DeleteRoomType', () =>
+    HttpResponse.json({
+      data: {
+        deleteRoomType: { success: true }
       }
     })
   ),
@@ -463,10 +509,44 @@ export const handlers = [
     })
   ),
 
-  graphql.mutation('AddGuestNote', () =>
+  graphql.mutation('AddGuestNote', ({ variables }) =>
     HttpResponse.json({
       data: {
-        addGuestNote: guestsMockData.newGuestNote
+        addGuestNote: {
+          ...guestsMockData.newGuestNote,
+          guestId: variables.guestId,
+          content: variables.content
+        }
+      }
+    })
+  ),
+
+  graphql.mutation('CreateGuest', ({ variables }) =>
+    HttpResponse.json({
+      data: {
+        createGuest: {
+          id: `g-new-${Date.now()}`,
+          ...variables.input
+        }
+      }
+    })
+  ),
+
+  graphql.mutation('UpdateGuest', ({ variables }) =>
+    HttpResponse.json({
+      data: {
+        updateGuest: {
+          id: variables.id,
+          ...variables.input
+        }
+      }
+    })
+  ),
+
+  graphql.mutation('DeleteGuest', () =>
+    HttpResponse.json({
+      data: {
+        deleteGuest: { success: true }
       }
     })
   ),

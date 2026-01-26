@@ -1,13 +1,67 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { graphqlRequest } from '../../api/graphqlRequest';
-import { RoomType, RoomInventory, BulkUpdateInventoryPayload } from './rooms.types';
+import { Room, RoomType, RoomInventory, BulkUpdateInventoryPayload } from './rooms.types';
 import { 
+  ROOMS_QUERY,
+  CREATE_ROOM_MUTATION,
+  UPDATE_ROOM_MUTATION,
+  DELETE_ROOM_MUTATION,
   ROOM_TYPES_QUERY, 
   CREATE_ROOM_TYPE_MUTATION, 
-  UPDATE_ROOM_TYPE_MUTATION, 
+  UPDATE_ROOM_TYPE_MUTATION,
+  DELETE_ROOM_TYPE_MUTATION,
   ROOM_INVENTORY_QUERY, 
   BULK_UPDATE_INVENTORY_MUTATION 
 } from '../../graphql/room.gql';
+
+export const useRooms = () => {
+  return useQuery<Room[]>({
+    queryKey: ['rooms'],
+    queryFn: async () => {
+      const data = await graphqlRequest<{ rooms: Room[] }>(ROOMS_QUERY);
+      return data.rooms;
+    },
+  });
+};
+
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<Room>) => {
+      const data = await graphqlRequest<{ createRoom: Room }>(CREATE_ROOM_MUTATION, { input });
+      return data.createRoom;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: Partial<Room> }) => {
+      const data = await graphqlRequest<{ updateRoom: Room }>(UPDATE_ROOM_MUTATION, { id, input });
+      return data.updateRoom;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const data = await graphqlRequest<{ deleteRoom: { success: boolean } }>(DELETE_ROOM_MUTATION, { id });
+      return data.deleteRoom;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
 
 export const useRoomTypes = () => {
   return useQuery<RoomType[]>({
@@ -22,8 +76,9 @@ export const useRoomTypes = () => {
 export const useCreateRoomType = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Partial<RoomType>) => {
-      return graphqlRequest<{ createRoomType: { id: string, success: boolean } }>(CREATE_ROOM_TYPE_MUTATION, { input: payload });
+    mutationFn: async (input: Partial<RoomType>) => {
+      const data = await graphqlRequest<{ createRoomType: RoomType }>(CREATE_ROOM_TYPE_MUTATION, { input });
+      return data.createRoomType;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['room-types'] });
@@ -34,8 +89,21 @@ export const useCreateRoomType = () => {
 export const useUpdateRoomType = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...payload }: Partial<RoomType> & { id: string }) => {
-      return graphqlRequest<{ updateRoomType: { success: boolean } }>(UPDATE_ROOM_TYPE_MUTATION, { id, input: payload });
+    mutationFn: async ({ id, input }: { id: string; input: Partial<RoomType> }) => {
+      return graphqlRequest<{ updateRoomType: { success: boolean } }>(UPDATE_ROOM_TYPE_MUTATION, { id, input });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+    },
+  });
+};
+
+export const useDeleteRoomType = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const data = await graphqlRequest<{ deleteRoomType: { success: boolean } }>(DELETE_ROOM_TYPE_MUTATION, { id });
+      return data.deleteRoomType;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['room-types'] });

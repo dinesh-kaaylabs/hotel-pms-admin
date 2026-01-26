@@ -6,7 +6,10 @@ import {
   GUEST_PROFILE_QUERY, 
   GUEST_STAYS_QUERY, 
   GUEST_NOTES_QUERY, 
-  ADD_GUEST_NOTE_MUTATION 
+  ADD_GUEST_NOTE_MUTATION,
+  CREATE_GUEST_MUTATION,
+  UPDATE_GUEST_MUTATION,
+  DELETE_GUEST_MUTATION
 } from '../../graphql/crm.gql';
 
 export const useGuests = (filters?: GuestFilters) => {
@@ -30,36 +33,34 @@ export const useGuestProfile = (id: string | undefined) => {
   });
 };
 
-export const useGuestStays = (id: string | undefined) => {
+export const useGuestStays = () => {
   return useQuery<GuestStay[]>({
-    queryKey: ['guests', 'stays', id],
+    queryKey: ['guests', 'stays'],
     queryFn: async () => {
-      const data = await graphqlRequest<{ guestStays: GuestStay[] }>(GUEST_STAYS_QUERY, { id });
+      const data = await graphqlRequest<{ guestStays: GuestStay[] }>(GUEST_STAYS_QUERY);
       return data.guestStays;
     },
-    enabled: !!id,
   });
 };
 
-export const useGuestNotes = (id: string | undefined) => {
+export const useGuestNotes = () => {
   return useQuery<GuestNote[]>({
-    queryKey: ['guests', 'notes', id],
+    queryKey: ['guests', 'notes'],
     queryFn: async () => {
-      const data = await graphqlRequest<{ guestNotes: GuestNote[] }>(GUEST_NOTES_QUERY, { id });
+      const data = await graphqlRequest<{ guestNotes: GuestNote[] }>(GUEST_NOTES_QUERY);
       return data.guestNotes;
     },
-    enabled: !!id,
   });
 };
 
-export const useAddGuestNote = (guestId: string | undefined) => {
+export const useAddGuestNote = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (note: string) => {
-      return graphqlRequest<{ addGuestNote: GuestNote }>(ADD_GUEST_NOTE_MUTATION, { guestId, note });
+    mutationFn: async ({ guestId, content }: { guestId: string; content: string }) => {
+      return graphqlRequest<{ addGuestNote: GuestNote }>(ADD_GUEST_NOTE_MUTATION, { guestId, content });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guests', 'notes', guestId] });
+      queryClient.invalidateQueries({ queryKey: ['guests', 'notes'] });
     },
   });
 };
@@ -67,15 +68,35 @@ export const useAddGuestNote = (guestId: string | undefined) => {
 export const useCreateGuest = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; phone: string; email?: string }) => {
-      const data = await graphqlRequest<{ createGuest: Guest }>(`
-        mutation CreateGuest($input: CreateGuestInput!) {
-          createGuest(input: $input) {
-            id name phone email
-          }
-        }
-      `, { input });
+    mutationFn: async (input: Partial<Guest>) => {
+      const data = await graphqlRequest<{ createGuest: Guest }>(CREATE_GUEST_MUTATION, { input });
       return data.createGuest;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+    },
+  });
+};
+
+export const useUpdateGuest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: Partial<Guest> }) => {
+      const data = await graphqlRequest<{ updateGuest: Guest }>(UPDATE_GUEST_MUTATION, { id, input });
+      return data.updateGuest;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+    },
+  });
+};
+
+export const useDeleteGuest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const data = await graphqlRequest<{ deleteGuest: { success: boolean } }>(DELETE_GUEST_MUTATION, { id });
+      return data.deleteGuest;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guests'] });

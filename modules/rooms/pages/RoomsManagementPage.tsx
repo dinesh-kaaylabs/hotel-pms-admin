@@ -1,36 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, Bed, DoorOpen, AlertCircle } from 'lucide-react';
-
-interface Room {
-  id: string;
-  hotelId: string;
-  roomNumber: string;
-  roomTypeId: string;
-  status: string;
-  floor: number;
-  lastCleanedAt: string;
-  lastInspectedAt: string;
-  viewType: string;
-  outOfOrderReason?: string;
-  maintenanceTicketId?: string;
-}
-
-interface RoomType {
-  id: string;
-  hotelId: string;
-  name: string;
-  capacity: number;
-  basePrice: number;
-  maxAdults: number;
-  maxChildren: number;
-  extraBedAllowed: boolean;
-  extraBedPrice: number | null;
-}
+import { useRooms, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
+import { Room, RoomType } from '../rooms.types';
 
 export default function RoomsManagementPage() {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: rooms = [], isLoading: loading } = useRooms();
+  const { data: roomTypes = [] } = useRoomTypes();
+  
+  const createRoomMutation = useCreateRoom();
+  const updateRoomMutation = useUpdateRoom();
+  const deleteRoomMutation = useDeleteRoom();
+  const createRoomTypeMutation = useCreateRoomType();
+  const deleteRoomTypeMutation = useDeleteRoomType();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
@@ -44,7 +26,7 @@ export default function RoomsManagementPage() {
     roomTypeId: '',
     floor: 1,
     viewType: 'CITY_VIEW',
-    status: 'CLEAN',
+    status: 'CLEAN' as const,
   });
 
   const [typeFormData, setTypeFormData] = useState({
@@ -57,38 +39,17 @@ export default function RoomsManagementPage() {
     extraBedPrice: 0,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [roomsRes, typesRes] = await Promise.all([
-        fetch('/api/rooms'),
-        fetch('/api/room-types'),
-      ]);
-      setRooms(await roomsRes.json());
-      setRoomTypes(await typesRes.json());
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateRoom = async () => {
     try {
-      const response = await fetch('/api/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(roomFormData),
+      await createRoomMutation.mutateAsync({
+        roomNumber: roomFormData.roomNumber,
+        roomTypeId: roomFormData.roomTypeId,
+        floor: roomFormData.floor,
+        viewType: roomFormData.viewType,
+        status: roomFormData.status,
       });
-      if (response.ok) {
-        await fetchData();
-        setShowCreateRoomModal(false);
-        resetRoomForm();
-      }
+      setShowCreateRoomModal(false);
+      resetRoomForm();
     } catch (error) {
       console.error('Failed to create room:', error);
     }
@@ -97,17 +58,19 @@ export default function RoomsManagementPage() {
   const handleUpdateRoom = async () => {
     if (!selectedRoom) return;
     try {
-      const response = await fetch(`/api/rooms/${selectedRoom.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(roomFormData),
+      await updateRoomMutation.mutateAsync({
+        id: selectedRoom.id,
+        input: {
+          roomNumber: roomFormData.roomNumber,
+          roomTypeId: roomFormData.roomTypeId,
+          floor: roomFormData.floor,
+          viewType: roomFormData.viewType,
+          status: roomFormData.status,
+        },
       });
-      if (response.ok) {
-        await fetchData();
-        setShowEditRoomModal(false);
-        setSelectedRoom(null);
-        resetRoomForm();
-      }
+      setShowEditRoomModal(false);
+      setSelectedRoom(null);
+      resetRoomForm();
     } catch (error) {
       console.error('Failed to update room:', error);
     }
@@ -115,16 +78,17 @@ export default function RoomsManagementPage() {
 
   const handleCreateRoomType = async () => {
     try {
-      const response = await fetch('/api/room-types', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(typeFormData),
+      await createRoomTypeMutation.mutateAsync({
+        name: typeFormData.name,
+        capacity: typeFormData.capacity,
+        basePrice: typeFormData.basePrice,
+        maxAdults: typeFormData.maxAdults,
+        maxChildren: typeFormData.maxChildren,
+        extraBedAllowed: typeFormData.extraBedAllowed,
+        extraBedPrice: typeFormData.extraBedAllowed ? typeFormData.extraBedPrice : null,
       });
-      if (response.ok) {
-        await fetchData();
-        setShowCreateTypeModal(false);
-        resetTypeForm();
-      }
+      setShowCreateTypeModal(false);
+      resetTypeForm();
     } catch (error) {
       console.error('Failed to create room type:', error);
     }
@@ -133,10 +97,7 @@ export default function RoomsManagementPage() {
   const handleDeleteRoom = async (id: string) => {
     if (!confirm('Are you sure you want to delete this room?')) return;
     try {
-      const response = await fetch(`/api/rooms/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        await fetchData();
-      }
+      await deleteRoomMutation.mutateAsync(id);
     } catch (error) {
       console.error('Failed to delete room:', error);
     }
@@ -145,10 +106,7 @@ export default function RoomsManagementPage() {
   const handleDeleteRoomType = async (id: string) => {
     if (!confirm('Are you sure you want to delete this room type?')) return;
     try {
-      const response = await fetch(`/api/room-types/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        await fetchData();
-      }
+      await deleteRoomTypeMutation.mutateAsync(id);
     } catch (error) {
       console.error('Failed to delete room type:', error);
     }
@@ -183,7 +141,7 @@ export default function RoomsManagementPage() {
       roomTypeId: room.roomTypeId,
       floor: room.floor,
       viewType: room.viewType,
-      status: room.status,
+      status: room.status as any,
     });
     setShowEditRoomModal(true);
   };
@@ -465,7 +423,7 @@ export default function RoomsManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={roomFormData.status}
-                  onChange={(e) => setRoomFormData({ ...roomFormData, status: e.target.value })}
+                  onChange={(e) => setRoomFormData({ ...roomFormData, status: e.target.value as any })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="CLEAN">Clean</option>

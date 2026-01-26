@@ -1,47 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, User, Phone, Mail, Star, FileText, Eye } from 'lucide-react';
-
-interface Guest {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  idType: string;
-  idNumber: string;
-  nationality: string;
-  preferences?: {
-    pillowType?: string;
-    smoking?: boolean;
-    dietaryNeeds?: string;
-  };
-  isVip: boolean;
-  privacyLevel: string;
-}
-
-interface GuestNote {
-  id: string;
-  guestId: string;
-  hotelId: string;
-  content: string;
-  createdAt: string;
-  userId?: string;
-}
-
-interface GuestStay {
-  id: string;
-  guestId: string;
-  hotelId: string;
-  checkInDate: string;
-  checkOutDate: string;
-  roomNumber: string;
-  totalSpent: number;
-}
+import { useGuests, useGuestStays, useGuestNotes, useCreateGuest, useUpdateGuest, useDeleteGuest, useAddGuestNote } from '../guests.api';
+import { Guest, GuestNote, GuestStay } from '../guests.types';
 
 export default function GuestsManagementPage() {
-  const [guests, setGuests] = useState<Guest[]>([]);
-  const [guestNotes, setGuestNotes] = useState<GuestNote[]>([]);
-  const [guestStays, setGuestStays] = useState<GuestStay[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: guests = [], isLoading: loading } = useGuests();
+  const { data: guestNotes = [] } = useGuestNotes();
+  const { data: guestStays = [] } = useGuestStays();
+  
+  const createGuestMutation = useCreateGuest();
+  const updateGuestMutation = useUpdateGuest();
+  const deleteGuestMutation = useDeleteGuest();
+  const addNoteMutation = useAddGuestNote();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [vipFilter, setVipFilter] = useState('ALL');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -65,47 +36,25 @@ export default function GuestsManagementPage() {
     privacyLevel: 'NORMAL',
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [guestsRes, notesRes, staysRes] = await Promise.all([
-        fetch('/api/guests'),
-        fetch('/api/guest-notes'),
-        fetch('/api/guest-stays'),
-      ]);
-      setGuests(await guestsRes.json());
-      setGuestNotes(await notesRes.json());
-      setGuestStays(await staysRes.json());
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreate = async () => {
     try {
-      const response = await fetch('/api/guests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          preferences: {
-            pillowType: formData.pillowType,
-            smoking: formData.smoking,
-            dietaryNeeds: formData.dietaryNeeds,
-          },
-        }),
+      await createGuestMutation.mutateAsync({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        idType: formData.idType,
+        idNumber: formData.idNumber,
+        nationality: formData.nationality,
+        preferences: {
+          pillowType: formData.pillowType,
+          smoking: formData.smoking,
+          dietaryNeeds: formData.dietaryNeeds,
+        },
+        isVip: formData.isVip,
+        privacyLevel: formData.privacyLevel,
       });
-      if (response.ok) {
-        await fetchData();
-        setShowCreateModal(false);
-        resetForm();
-      }
+      setShowCreateModal(false);
+      resetForm();
     } catch (error) {
       console.error('Failed to create guest:', error);
     }
@@ -114,24 +63,27 @@ export default function GuestsManagementPage() {
   const handleUpdate = async () => {
     if (!selectedGuest) return;
     try {
-      const response = await fetch(`/api/guests/${selectedGuest.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
+      await updateGuestMutation.mutateAsync({
+        id: selectedGuest.id,
+        input: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          idType: formData.idType,
+          idNumber: formData.idNumber,
+          nationality: formData.nationality,
           preferences: {
             pillowType: formData.pillowType,
             smoking: formData.smoking,
             dietaryNeeds: formData.dietaryNeeds,
           },
-        }),
+          isVip: formData.isVip,
+          privacyLevel: formData.privacyLevel,
+        },
       });
-      if (response.ok) {
-        await fetchData();
-        setShowEditModal(false);
-        setSelectedGuest(null);
-        resetForm();
-      }
+      setShowEditModal(false);
+      setSelectedGuest(null);
+      resetForm();
     } catch (error) {
       console.error('Failed to update guest:', error);
     }
@@ -140,10 +92,7 @@ export default function GuestsManagementPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this guest?')) return;
     try {
-      const response = await fetch(`/api/guests/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        await fetchData();
-      }
+      await deleteGuestMutation.mutateAsync(id);
     } catch (error) {
       console.error('Failed to delete guest:', error);
     }
@@ -152,18 +101,11 @@ export default function GuestsManagementPage() {
   const handleAddNote = async () => {
     if (!selectedGuest || !newNote.trim()) return;
     try {
-      const response = await fetch('/api/guest-notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestId: selectedGuest.id,
-          content: newNote,
-        }),
+      await addNoteMutation.mutateAsync({
+        guestId: selectedGuest.id,
+        content: newNote,
       });
-      if (response.ok) {
-        await fetchData();
-        setNewNote('');
-      }
+      setNewNote('');
     } catch (error) {
       console.error('Failed to add note:', error);
     }
