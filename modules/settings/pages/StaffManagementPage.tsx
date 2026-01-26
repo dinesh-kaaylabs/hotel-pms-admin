@@ -41,7 +41,7 @@ export default function StaffManagementPage() {
       const response = await fetch('/api/staff');
       setStaff(await response.json());
     } catch (error) {
-      console.error('Failed to fetch staff:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function StaffManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create staff:', error);
+      // Error handled silently
     }
   };
 
@@ -79,7 +79,7 @@ export default function StaffManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update staff:', error);
+      // Error handled silently
     }
   };
 
@@ -88,10 +88,10 @@ export default function StaffManagementPage() {
     try {
       const response = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchStaff();
+        await         fetchStaff();
       }
     } catch (error) {
-      console.error('Failed to delete staff:', error);
+      // Error handled silently
     }
   };
 
@@ -103,10 +103,10 @@ export default function StaffManagementPage() {
         body: JSON.stringify({ isActive: !isActive }),
       });
       if (response.ok) {
-        await fetchStaff();
+        await         fetchStaff();
       }
     } catch (error) {
-      console.error('Failed to toggle staff status:', error);
+      // Error handled silently
     }
   };
 

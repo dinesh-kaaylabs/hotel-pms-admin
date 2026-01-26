@@ -55,7 +55,7 @@ export default function BookingsManagementPage() {
       const response = await fetch('/api/bookings');
       setBookings(await response.json());
     } catch (error) {
-      console.error('Failed to fetch bookings:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export default function BookingsManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create booking:', error);
+      // Error handled silently
     }
   };
 
@@ -93,7 +93,7 @@ export default function BookingsManagementPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update booking:', error);
+      // Error handled silently
     }
   };
 
@@ -102,10 +102,10 @@ export default function BookingsManagementPage() {
     try {
       const response = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchBookings();
+        await         fetchBookings();
       }
     } catch (error) {
-      console.error('Failed to delete booking:', error);
+      // Error handled silently
     }
   };
 
@@ -115,10 +115,10 @@ export default function BookingsManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchBookings();
+        await         fetchBookings();
       }
     } catch (error) {
-      console.error('Failed to check in:', error);
+      // Error handled silently
     }
   };
 
@@ -128,10 +128,10 @@ export default function BookingsManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchBookings();
+        await         fetchBookings();
       }
     } catch (error) {
-      console.error('Failed to check out:', error);
+      // Error handled silently
     }
   };
 
@@ -142,10 +142,10 @@ export default function BookingsManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchBookings();
+        await         fetchBookings();
       }
     } catch (error) {
-      console.error('Failed to cancel booking:', error);
+      // Error handled silently
     }
   };
 

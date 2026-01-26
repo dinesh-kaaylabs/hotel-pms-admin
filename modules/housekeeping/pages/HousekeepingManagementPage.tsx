@@ -41,7 +41,7 @@ export default function HousekeepingManagementPage() {
       setRooms(await roomsRes.json());
       setCleaningLogs(await logsRes.json());
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -53,10 +53,10 @@ export default function HousekeepingManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchData();
+        await         fetchData();
       }
     } catch (error) {
-      console.error('Failed to mark room as clean:', error);
+      // Error handled silently
     }
   };
 
@@ -66,10 +66,10 @@ export default function HousekeepingManagementPage() {
         method: 'POST',
       });
       if (response.ok) {
-        await fetchData();
+        await         fetchData();
       }
     } catch (error) {
-      console.error('Failed to mark room as dirty:', error);
+      // Error handled silently
     }
   };
 

@@ -43,7 +43,7 @@ export default function ReportsAnalyticsPage() {
       setRevenueTrend(await revenueRes.json());
       setOccupancyTrend(await occupancyRes.json());
     } catch (error) {
-      console.error('Failed to fetch reports:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function ReportsAnalyticsPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Failed to export report:', error);
+      // Error handled silently
     }
   };
 

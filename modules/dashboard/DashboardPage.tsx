@@ -65,7 +65,7 @@ export const DashboardPage: React.FC = () => {
       occupancyRate: summary.occupancyRate,
       adr: summary.adr,
     });
-  }, [summary, generateAIPulseMutation]);
+  }, [summary, generateAIPulseMutation.mutate]);
 
   useEffect(() => {
     if (summary) generateAIPulse();

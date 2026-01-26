@@ -3,11 +3,14 @@ import { Plus, Search, Edit2, Trash2, Bed, DoorOpen, AlertCircle } from 'lucide-
 import { useRooms, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
 import { Room, RoomType } from '../rooms.types';
 import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 
 export default function RoomsManagementPage() {
   const { data: rooms = [], isLoading: loading } = useRooms();
   const { data: roomTypes = [] } = useRoomTypes();
   const { success, error } = useToast();
+  const { format } = useCurrency();
   
   const createRoomMutation = useCreateRoom();
   const updateRoomMutation = useUpdateRoom();
@@ -22,6 +25,8 @@ export default function RoomsManagementPage() {
   const [showCreateTypeModal, setShowCreateTypeModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [activeTab, setActiveTab] = useState<'rooms' | 'types'>('rooms');
+  const [deleteRoomConfirm, setDeleteRoomConfirm] = useState<{ isOpen: boolean; roomId: string | null }>({ isOpen: false, roomId: null });
+  const [deleteTypeConfirm, setDeleteTypeConfirm] = useState<{ isOpen: boolean; typeId: string | null }>({ isOpen: false, typeId: null });
   
   const [roomFormData, setRoomFormData] = useState({
     roomNumber: '',
@@ -99,23 +104,27 @@ export default function RoomsManagementPage() {
     }
   };
 
-  const handleDeleteRoom = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this room?')) return;
+  const handleDeleteRoom = async () => {
+    if (!deleteRoomConfirm.roomId) return;
     try {
-      await deleteRoomMutation.mutateAsync(id);
+      await deleteRoomMutation.mutateAsync(deleteRoomConfirm.roomId);
       success('Room deleted successfully');
+      setDeleteRoomConfirm({ isOpen: false, roomId: null });
     } catch (err: any) {
       error(err?.message || 'Failed to delete room. Please try again.');
+      setDeleteRoomConfirm({ isOpen: false, roomId: null });
     }
   };
 
-  const handleDeleteRoomType = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this room type?')) return;
+  const handleDeleteRoomType = async () => {
+    if (!deleteTypeConfirm.typeId) return;
     try {
-      await deleteRoomTypeMutation.mutateAsync(id);
+      await deleteRoomTypeMutation.mutateAsync(deleteTypeConfirm.typeId);
       success('Room type deleted successfully');
+      setDeleteTypeConfirm({ isOpen: false, typeId: null });
     } catch (err: any) {
       error(err?.message || 'Failed to delete room type. Please try again.');
+      setDeleteTypeConfirm({ isOpen: false, typeId: null });
     }
   };
 
@@ -301,7 +310,7 @@ export default function RoomsManagementPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteRoom(room.id)}
+                      onClick={() => setDeleteRoomConfirm({ isOpen: true, roomId: room.id })}
                       className="px-2 py-1 text-red-600 bg-red-50 hover:bg-red-100 rounded"
                     >
                       <Trash2 size={14} />
@@ -336,7 +345,7 @@ export default function RoomsManagementPage() {
                     <h3 className="text-xl font-semibold text-gray-900">{type.name}</h3>
                   </div>
                   <button
-                    onClick={() => handleDeleteRoomType(type.id)}
+                    onClick={() => setDeleteTypeConfirm({ isOpen: true, typeId: type.id })}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                   >
                     <Trash2 size={18} />
@@ -345,7 +354,7 @@ export default function RoomsManagementPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-gray-600">Base Price</p>
-                    <p className="font-semibold text-gray-900">₹{type.basePrice.toLocaleString()}</p>
+                    <p className="font-semibold text-gray-900">{format(type.basePrice)}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Capacity</p>
@@ -366,7 +375,7 @@ export default function RoomsManagementPage() {
                   {type.extraBedAllowed && type.extraBedPrice && (
                     <div>
                       <p className="text-gray-600">Extra Bed Price</p>
-                      <p className="font-semibold text-gray-900">₹{type.extraBedPrice.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">{format(type.extraBedPrice)}</p>
                     </div>
                   )}
                 </div>
@@ -560,6 +569,24 @@ export default function RoomsManagementPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteRoomConfirm.isOpen}
+        title="Delete Room"
+        description="Are you sure you want to delete this room? This action cannot be undone."
+        onConfirm={handleDeleteRoom}
+        onCancel={() => setDeleteRoomConfirm({ isOpen: false, roomId: null })}
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={deleteTypeConfirm.isOpen}
+        title="Delete Room Type"
+        description="Are you sure you want to delete this room type? All rooms of this type will be affected."
+        onConfirm={handleDeleteRoomType}
+        onCancel={() => setDeleteTypeConfirm({ isOpen: false, typeId: null })}
+        variant="danger"
+      />
     </div>
   );
 }

@@ -3,12 +3,15 @@ import { Plus, Search, Edit2, Trash2, User, Phone, Mail, Star, FileText, Eye } f
 import { useGuests, useGuestStays, useGuestNotes, useCreateGuest, useUpdateGuest, useDeleteGuest, useAddGuestNote } from '../guests.api';
 import { Guest, GuestNote, GuestStay } from '../guests.types';
 import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 
 export default function GuestsManagementPage() {
   const { data: guests = [], isLoading: loading } = useGuests();
   const { data: guestNotes = [] } = useGuestNotes();
   const { data: guestStays = [] } = useGuestStays();
   const { success, error } = useToast();
+  const { format } = useCurrency();
   
   const createGuestMutation = useCreateGuest();
   const updateGuestMutation = useUpdateGuest();
@@ -23,6 +26,7 @@ export default function GuestsManagementPage() {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [newNote, setNewNote] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; guestId: string | null }>({ isOpen: false, guestId: null });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -93,13 +97,15 @@ export default function GuestsManagementPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this guest?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.guestId) return;
     try {
-      await deleteGuestMutation.mutateAsync(id);
+      await deleteGuestMutation.mutateAsync(deleteConfirm.guestId);
       success('Guest deleted successfully');
+      setDeleteConfirm({ isOpen: false, guestId: null });
     } catch (err: any) {
       error(err?.message || 'Failed to delete guest. Please try again.');
+      setDeleteConfirm({ isOpen: false, guestId: null });
     }
   };
 
@@ -309,7 +315,7 @@ export default function GuestsManagementPage() {
                     </div>
                     <div>
                       <p className="text-gray-600">Total Spent</p>
-                      <p className="font-semibold text-gray-900">₹{totalSpent.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">{format(totalSpent)}</p>
                     </div>
                     <div>
                       <p className="text-gray-600">Notes</p>
@@ -340,7 +346,7 @@ export default function GuestsManagementPage() {
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDelete(guest.id)}
+                    onClick={() => setDeleteConfirm({ isOpen: true, guestId: guest.id })}
                     className="px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                   >
                     <Trash2 size={14} />
@@ -578,7 +584,7 @@ export default function GuestsManagementPage() {
                         </div>
                         <div>
                           <p className="text-gray-600">Spent</p>
-                          <p className="font-medium text-gray-900">₹{stay.totalSpent.toLocaleString()}</p>
+                          <p className="font-medium text-gray-900">{format(stay.totalSpent)}</p>
                         </div>
                       </div>
                     </div>
@@ -646,6 +652,15 @@ export default function GuestsManagementPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Guest"
+        description="Are you sure you want to delete this guest? This action cannot be undone and will remove all guest history."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, guestId: null })}
+        variant="danger"
+      />
     </div>
   );
 }

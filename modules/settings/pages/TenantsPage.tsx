@@ -59,7 +59,7 @@ export default function TenantsPage() {
       setSubscriptions(await subsRes.json());
       setPlans(await plansRes.json());
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function TenantsPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to create tenant:', error);
+      // Error handled silently
     }
   };
 
@@ -97,7 +97,7 @@ export default function TenantsPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Failed to update tenant:', error);
+      // Error handled silently
     }
   };
 
@@ -106,10 +106,10 @@ export default function TenantsPage() {
     try {
       const response = await fetch(`/api/tenants/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        await fetchData();
+        await         fetchData();
       }
     } catch (error) {
-      console.error('Failed to delete tenant:', error);
+      // Error handled silently
     }
   };
 

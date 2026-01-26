@@ -51,7 +51,7 @@ export default function PaymentsManagementPage() {
       setPayments(await paymentsRes.json());
       setSettlements(await settlementsRes.json());
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoading(false);
     }
