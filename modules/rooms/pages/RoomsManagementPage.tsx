@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, Bed, DoorOpen, AlertCircle } from 'lucide-react';
 import { useRooms, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
 import { Room, RoomType } from '../rooms.types';
+import { useToast } from '../../../components/ui/Toast';
 
 export default function RoomsManagementPage() {
   const { data: rooms = [], isLoading: loading } = useRooms();
   const { data: roomTypes = [] } = useRoomTypes();
+  const { success, error } = useToast();
   
   const createRoomMutation = useCreateRoom();
   const updateRoomMutation = useUpdateRoom();
@@ -48,10 +50,11 @@ export default function RoomsManagementPage() {
         viewType: roomFormData.viewType,
         status: roomFormData.status,
       });
+      success('Room created successfully');
       setShowCreateRoomModal(false);
       resetRoomForm();
-    } catch (error) {
-      console.error('Failed to create room:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to create room. Please try again.');
     }
   };
 
@@ -68,11 +71,12 @@ export default function RoomsManagementPage() {
           status: roomFormData.status,
         },
       });
+      success('Room updated successfully');
       setShowEditRoomModal(false);
       setSelectedRoom(null);
       resetRoomForm();
-    } catch (error) {
-      console.error('Failed to update room:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to update room. Please try again.');
     }
   };
 
@@ -87,10 +91,11 @@ export default function RoomsManagementPage() {
         extraBedAllowed: typeFormData.extraBedAllowed,
         extraBedPrice: typeFormData.extraBedAllowed ? typeFormData.extraBedPrice : null,
       });
+      success('Room type created successfully');
       setShowCreateTypeModal(false);
       resetTypeForm();
-    } catch (error) {
-      console.error('Failed to create room type:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to create room type. Please try again.');
     }
   };
 
@@ -98,8 +103,9 @@ export default function RoomsManagementPage() {
     if (!confirm('Are you sure you want to delete this room?')) return;
     try {
       await deleteRoomMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete room:', error);
+      success('Room deleted successfully');
+    } catch (err: any) {
+      error(err?.message || 'Failed to delete room. Please try again.');
     }
   };
 
@@ -107,8 +113,9 @@ export default function RoomsManagementPage() {
     if (!confirm('Are you sure you want to delete this room type?')) return;
     try {
       await deleteRoomTypeMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete room type:', error);
+      success('Room type deleted successfully');
+    } catch (err: any) {
+      error(err?.message || 'Failed to delete room type. Please try again.');
     }
   };
 

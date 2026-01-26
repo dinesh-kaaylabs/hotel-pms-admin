@@ -25,6 +25,7 @@ const processQueue = (error: any) => {
 export const graphqlClient = axios.create({
   baseURL: '/graphql',
   withCredentials: true,
+  timeout: 30000, // 30s timeout to prevent infinite loading states
   headers: {
     'Content-Type': 'application/json',
   },
@@ -112,7 +113,23 @@ graphqlClient.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    // Network-level failures only.
-    return Promise.reject(error);
+    // Network-level failures: timeout, connection refused, DNS failure, etc.
+    let message = 'Network error. Please check your connection.';
+    let code = 'NETWORK_ERROR';
+    
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      message = 'Request timed out. Please try again.';
+      code = 'TIMEOUT';
+    } else if (error.code === 'ERR_NETWORK') {
+      message = 'Unable to reach server. Please check your internet connection.';
+      code = 'CONNECTION_FAILED';
+    }
+    
+    // Normalize to GraphQLError shape for consistent handling
+    const normalizedError = new Error(message) as any;
+    normalizedError.code = code;
+    normalizedError.extensions = { code };
+    
+    return Promise.reject(normalizedError);
   }
 );

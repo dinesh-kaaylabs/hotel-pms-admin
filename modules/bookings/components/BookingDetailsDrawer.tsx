@@ -39,9 +39,15 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
   if (!booking) return null;
 
   const handleStatusUpdate = async (status: BookingStatus) => {
-    await updateStatus.mutateAsync({ id: booking.id, status });
-    setConfirmConfig(null);
-    onClose();
+    try {
+      await updateStatus.mutateAsync({ id: booking.id, status });
+      success('Booking status updated successfully');
+      setConfirmConfig(null);
+      onClose();
+    } catch (err: any) {
+      error(err?.message || 'Failed to update booking status. Please try again.');
+      setConfirmConfig(null);
+    }
   };
 
   const handleProcessRefund = async () => {

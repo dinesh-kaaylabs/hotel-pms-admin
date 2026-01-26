@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, User, Phone, Mail, Star, FileText, Eye } from 'lucide-react';
 import { useGuests, useGuestStays, useGuestNotes, useCreateGuest, useUpdateGuest, useDeleteGuest, useAddGuestNote } from '../guests.api';
 import { Guest, GuestNote, GuestStay } from '../guests.types';
+import { useToast } from '../../../components/ui/Toast';
 
 export default function GuestsManagementPage() {
   const { data: guests = [], isLoading: loading } = useGuests();
   const { data: guestNotes = [] } = useGuestNotes();
   const { data: guestStays = [] } = useGuestStays();
+  const { success, error } = useToast();
   
   const createGuestMutation = useCreateGuest();
   const updateGuestMutation = useUpdateGuest();
@@ -53,10 +55,11 @@ export default function GuestsManagementPage() {
         isVip: formData.isVip,
         privacyLevel: formData.privacyLevel,
       });
+      success('Guest created successfully');
       setShowCreateModal(false);
       resetForm();
-    } catch (error) {
-      console.error('Failed to create guest:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to create guest. Please try again.');
     }
   };
 
@@ -81,11 +84,12 @@ export default function GuestsManagementPage() {
           privacyLevel: formData.privacyLevel,
         },
       });
+      success('Guest updated successfully');
       setShowEditModal(false);
       setSelectedGuest(null);
       resetForm();
-    } catch (error) {
-      console.error('Failed to update guest:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to update guest. Please try again.');
     }
   };
 
@@ -93,8 +97,9 @@ export default function GuestsManagementPage() {
     if (!confirm('Are you sure you want to delete this guest?')) return;
     try {
       await deleteGuestMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Failed to delete guest:', error);
+      success('Guest deleted successfully');
+    } catch (err: any) {
+      error(err?.message || 'Failed to delete guest. Please try again.');
     }
   };
 
@@ -105,9 +110,10 @@ export default function GuestsManagementPage() {
         guestId: selectedGuest.id,
         content: newNote,
       });
+      success('Note added successfully');
       setNewNote('');
-    } catch (error) {
-      console.error('Failed to add note:', error);
+    } catch (err: any) {
+      error(err?.message || 'Failed to add note. Please try again.');
     }
   };
 
