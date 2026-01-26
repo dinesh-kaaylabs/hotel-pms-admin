@@ -9,10 +9,11 @@ interface FailedRequest {
 
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
-let refreshAttempts = 0;
+let refreshPromise: Promise<any> | null = null;
 const MAX_REFRESH_ATTEMPTS = 3;
 const QUEUE_TIMEOUT = 10000; // 10 seconds
 const REFRESH_COOLDOWN = 5000; // 5 seconds between refresh attempts
+let lastRefreshAttempt = 0;
 
 const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
@@ -71,18 +72,19 @@ graphqlClient.interceptors.response.use(
         processQueue(new Error('SESSION_EXPIRED'));
         // Emit session expired event for app-level handling
         window.dispatchEvent(new CustomEvent('auth:session-expired'));
+        refreshPromise = null;
         return Promise.reject(authError);
       }
 
-      // Check if we've exceeded max refresh attempts
-      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        processQueue(new Error('MAX_REFRESH_ATTEMPTS_EXCEEDED'));
-        window.dispatchEvent(new CustomEvent('auth:session-expired'));
-        refreshAttempts = 0; // Reset for next session
-        return Promise.reject(new Error('Too many refresh attempts. Please log in again.'));
+      // Check cooldown period to prevent rapid refresh attempts
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshAttempt;
+      if (timeSinceLastRefresh < REFRESH_COOLDOWN && lastRefreshAttempt > 0) {
+        return Promise.reject(new Error('Refresh cooldown active. Please wait.'));
       }
 
-      if (isRefreshing) {
+      // If refresh is already in progress, wait for it
+      if (isRefreshing && refreshPromise) {
         // Clean up stale requests before adding new one
         cleanupQueue();
         
@@ -107,44 +109,45 @@ graphqlClient.interceptors.response.use(
       }
 
       isRefreshing = true;
-      refreshAttempts++;
+      lastRefreshAttempt = now;
 
-      // Trigger GraphQL-based token refresh
-      return new Promise((resolve, reject) => {
-        graphqlClient.post('', {
-          query: `mutation RefreshToken { refreshToken { success } }`
-        })
-        .then(({ data: refreshData }) => {
-          if (refreshData.data?.refreshToken?.success) {
-            refreshAttempts = 0; // Reset on success
-            processQueue(null);
-            resolve(graphqlClient(originalRequest));
-          } else {
-            throw new Error('REFRESH_FAILED');
+      // Trigger GraphQL-based token refresh (single promise shared by all concurrent requests)
+      refreshPromise = graphqlClient.post('', {
+        query: `mutation RefreshToken { refreshToken { success } }`
+      })
+      .then(({ data: refreshData }) => {
+        if (refreshData.data?.refreshToken?.success) {
+          processQueue(null);
+          return graphqlClient(originalRequest);
+        } else {
+          throw new Error('REFRESH_FAILED');
+        }
+      })
+      .catch((err) => {
+        processQueue(err);
+        
+        // Check if we've exceeded cooldown attempts (3 attempts in 15 seconds = session expired)
+        const attemptsSinceStart = Math.floor((now - lastRefreshAttempt) / REFRESH_COOLDOWN);
+        if (attemptsSinceStart >= MAX_REFRESH_ATTEMPTS) {
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          lastRefreshAttempt = 0; // Reset
+        }
+        
+        throw err;
+      })
+      .finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+        
+        // Cleanup queue after processing
+        setTimeout(() => {
+          if (failedQueue.length > 0) {
+            cleanupQueue();
           }
-        })
-        .catch((err) => {
-          processQueue(err);
-          
-          // Only emit session expired if we've exhausted retries
-          if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-            window.dispatchEvent(new CustomEvent('auth:session-expired'));
-            refreshAttempts = 0;
-          }
-          
-          reject(err);
-        })
-        .finally(() => {
-          isRefreshing = false;
-          
-          // Cleanup queue after processing
-          setTimeout(() => {
-            if (failedQueue.length > 0) {
-              cleanupQueue();
-            }
-          }, 1000);
-        });
+        }, 1000);
       });
+
+      return refreshPromise;
     }
 
     return response;

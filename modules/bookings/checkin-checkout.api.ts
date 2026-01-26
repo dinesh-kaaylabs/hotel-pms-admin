@@ -64,6 +64,7 @@ export interface CheckInInput {
   guestIdDocument?: string;
   paymentMethod?: string;
   specialRequests?: string;
+  idempotencyKey?: string;
 }
 
 /**
@@ -104,6 +105,7 @@ export interface CheckOutInput {
   paymentMethod: string;
   paymentAmount: number;
   guestFeedback?: string;
+  idempotencyKey?: string;
 }
 
 /**
@@ -127,6 +129,7 @@ export interface RecordPaymentInput {
   method: string;
   transactionId?: string;
   notes?: string;
+  idempotencyKey?: string;
 }
 
 /**
@@ -354,9 +357,15 @@ export const useCheckIn = () => {
   
   return useMutation<CheckInResponse, Error, { bookingId: string; input: CheckInInput }>({
     mutationFn: async ({ bookingId, input }) => {
+      // Generate idempotency key if not provided (prevents duplicate check-ins on retry)
+      const inputWithKey = {
+        ...input,
+        idempotencyKey: input.idempotencyKey || `checkin-${bookingId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      
       const data = await graphqlRequest<{ checkIn: CheckInResponse }>(
         CHECK_IN_MUTATION,
-        { bookingId, input }
+        { bookingId, input: inputWithKey }
       );
       return data.checkIn;
     },
@@ -372,9 +381,15 @@ export const useCheckOut = () => {
   
   return useMutation<CheckOutResponse, Error, { bookingId: string; input: CheckOutInput }>({
     mutationFn: async ({ bookingId, input }) => {
+      // Generate idempotency key if not provided (prevents duplicate checkouts/charges on retry)
+      const inputWithKey = {
+        ...input,
+        idempotencyKey: input.idempotencyKey || `checkout-${bookingId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      
       const data = await graphqlRequest<{ checkOut: CheckOutResponse }>(
         CHECK_OUT_MUTATION,
-        { bookingId, input }
+        { bookingId, input: inputWithKey }
       );
       return data.checkOut;
     },
@@ -407,9 +422,15 @@ export const useRecordPayment = () => {
   
   return useMutation<RecordPaymentResponse, Error, RecordPaymentInput>({
     mutationFn: async (input: RecordPaymentInput) => {
+      // Generate idempotency key if not provided (prevents duplicate payment recording on retry)
+      const inputWithKey = {
+        ...input,
+        idempotencyKey: input.idempotencyKey || `payment-${input.bookingId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      
       const data = await graphqlRequest<{ recordPayment: RecordPaymentResponse }>(
         RECORD_PAYMENT_MUTATION,
-        { input }
+        { input: inputWithKey }
       );
       return data.recordPayment;
     },

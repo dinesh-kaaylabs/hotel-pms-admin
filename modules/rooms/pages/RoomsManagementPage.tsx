@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Plus, Search, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRoomsPaginated, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType } from '../rooms.api';
+import { useRoomsPaginated, useRoomTypes, useCreateRoom, useUpdateRoom, useDeleteRoom, useCreateRoomType, useDeleteRoomType, useRoomStats } from '../rooms.api';
 import { Room, RoomType, RoomStatus } from '../rooms.types';
 import { useToast } from '../../../components/ui/Toast';
 import { useCurrency } from '../../../providers/CurrencyProvider';
@@ -44,6 +44,9 @@ export default function RoomsManagementPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
   
   const { data: roomTypes = [] } = useRoomTypes(activeHotelId);
+  
+  // Use dedicated stats endpoint for accurate counts across all rooms
+  const { data: statsData } = useRoomStats(activeHotelId);
   
   const createRoomMutation = useCreateRoom(activeHotelId);
   const updateRoomMutation = useUpdateRoom(activeHotelId);
@@ -96,12 +99,18 @@ export default function RoomsManagementPage() {
     return new Map(roomTypes.map(t => [t.id, t.name]));
   }, [roomTypes]);
 
-  // Calculate stats from all rooms (need to fetch all for accurate stats)
-  // For now, calculate from current page - TODO: Add stats endpoint
+  // Use stats from dedicated endpoint (accurate across all rooms, not affected by pagination/filters)
   const roomStats = useMemo(() => {
-    // If we have paginated data, we can't calculate accurate stats from current page alone
-    // This is a limitation - ideally backend should provide stats separately
-    // For now, calculate from visible rooms (will be inaccurate with filters)
+    if (statsData) {
+      return {
+        total: statsData.total,
+        clean: statsData.clean,
+        dirty: statsData.dirty,
+        occupied: statsData.occupied,
+        maintenance: statsData.maintenance,
+      };
+    }
+    // Fallback to calculating from current page (inaccurate but better than nothing)
     return {
       total: totalCount,
       clean: rooms.filter(r => r.status === 'CLEAN').length,
@@ -109,7 +118,7 @@ export default function RoomsManagementPage() {
       occupied: rooms.filter(r => r.status === 'OCCUPIED').length,
       maintenance: rooms.filter(r => r.status === 'MAINTENANCE').length,
     };
-  }, [rooms, totalCount]);
+  }, [statsData, rooms, totalCount]);
 
   const getRoomTypeName = useCallback((typeId: string) => {
     return roomTypeMap.get(typeId) || 'Unknown';
@@ -165,7 +174,8 @@ export default function RoomsManagementPage() {
       setSelectedRoom(null);
       resetRoomForm();
     } catch (err) {
-      error(getErrorMessage(err, 'update room'));
+      // Optimistic update was reverted, show error to user
+      error(getErrorMessage(err, 'update room') + ' - Changes have been reverted.');
     }
   };
 
@@ -202,7 +212,8 @@ export default function RoomsManagementPage() {
       success('Room deleted successfully');
       setDeleteRoomConfirm({ isOpen: false, roomId: null });
     } catch (err) {
-      error(getErrorMessage(err, 'delete room'));
+      // Optimistic update was reverted, show error to user
+      error(getErrorMessage(err, 'delete room') + ' - Changes have been reverted.');
       setDeleteRoomConfirm({ isOpen: false, roomId: null });
     }
   };

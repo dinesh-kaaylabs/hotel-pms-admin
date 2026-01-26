@@ -20,6 +20,7 @@ interface CheckInInput {
   guestIdDocument?: string;
   paymentMethod?: string;
   specialRequests?: string;
+  idempotencyKey?: string;
 }
 
 interface CheckOutInput {
@@ -27,6 +28,7 @@ interface CheckOutInput {
   paymentMethod: string;
   paymentAmount: number;
   guestFeedback?: string;
+  idempotencyKey?: string;
 }
 
 interface AdditionalChargeInput {
@@ -41,6 +43,7 @@ interface RecordPaymentInput {
   method: string;
   transactionId?: string;
   notes?: string;
+  idempotencyKey?: string;
 }
 
 interface RefundInput {
@@ -65,6 +68,7 @@ export class CheckInCheckOutResolver {
    * - checkInDate must be valid ISO date
    * - checkOutDate must be valid ISO date
    * - checkOutDate must be after checkInDate
+   * - SECURITY: User must have access to the hotel (X-Hotel-Id header)
    * 
    * BUSINESS LOGIC:
    * - Exclude rooms with bookings overlapping date range
@@ -81,7 +85,26 @@ export class CheckInCheckOutResolver {
     @Args('checkOutDate') checkOutDate: string,
   ) {
     // TODO: Implement database query
-    // - Query rooms by roomTypeId
+    // CRITICAL SECURITY: Validate tenant isolation
+    // 
+    // const hotelId = request.headers['x-hotel-id'];
+    // const user = request.user; // From JWT
+    // 
+    // // Verify user has access to this hotel
+    // const hasAccess = user.hotels.some(h => h.id === hotelId);
+    // if (!hasAccess) {
+    //   throw new UnauthorizedException('User does not have access to this hotel');
+    // }
+    // 
+    // // Verify roomType belongs to this hotel
+    // const roomType = await this.roomTypeRepository.findOne({
+    //   where: { id: roomTypeId, hotelId }
+    // });
+    // if (!roomType) {
+    //   throw new NotFoundException('Room type not found or does not belong to this hotel');
+    // }
+    // 
+    // - Query rooms by roomTypeId AND hotelId (never trust client-provided hotelId alone)
     // - Filter by status = AVAILABLE
     // - Exclude rooms with overlapping bookings (checkInDate to checkOutDate)
     // - Exclude rooms with status = MAINTENANCE
@@ -119,24 +142,75 @@ export class CheckInCheckOutResolver {
     @Args('bookingId') bookingId: string,
     @Args('input') input: CheckInInput,
   ) {
-    // TODO: Implement database transaction
-    // 1. Fetch booking (with roomType relation)
-    // 2. Validate booking status = CONFIRMED
-    // 3. Fetch room by roomId
-    // 4. Validate room status = AVAILABLE
-    // 5. Validate room type matches booking room type
-    // 6. Validate room availability (no overlapping bookings)
-    // 7. If paymentMethod provided, record payment
-    // 8. Update booking: status = CHECKED_IN, roomId = input.roomId
-    // 9. Update room: status = OCCUPIED
-    // 10. Create audit log
-    // 11. Return CheckInResponse
+    // TODO: Implement database transaction with row-level locking
+    // CRITICAL: Use SELECT FOR UPDATE to prevent race conditions
+    // 
+    // Example (PostgreSQL/MySQL):
+    // await queryRunner.startTransaction();
+    // try {
+    //   // IDEMPOTENCY: Check if this operation was already processed
+    //   if (input.idempotencyKey) {
+    //     const existing = await this.idempotencyRepository.findOne({
+    //       where: { key: input.idempotencyKey, operation: 'check-in' }
+    //     });
+    //     if (existing) {
+    //       // Return cached result (stored for 24 hours)
+    //       return JSON.parse(existing.result);
+    //     }
+    //   }
+    //   
+    //   // SECURITY: Validate tenant isolation
+    //   const hotelId = request.headers['x-hotel-id'];
+    //   const user = request.user; // From JWT
+    //   const hasAccess = user.hotels.some(h => h.id === hotelId);
+    //   if (!hasAccess) throw new UnauthorizedException('Access denied');
+    //   
+    //   1. Fetch booking (with roomType relation) AND validate hotelId matches:
+    //      const booking = await this.bookingRepository.findOne({
+    //        where: { id: bookingId, hotelId }
+    //      });
+    //      if (!booking) throw new NotFoundException('Booking not found');
+    //   2. Validate booking status = CONFIRMED
+    //   3. Fetch room by roomId WITH LOCK:
+    //      const room = await queryRunner.query(
+    //        'SELECT * FROM rooms WHERE id = $1 FOR UPDATE',
+    //        [input.roomId]
+    //      );
+    //   4. Validate room status = AVAILABLE (after lock acquired)
+    //   5. Validate room type matches booking room type
+    //   6. Validate room availability (no overlapping bookings):
+    //      const overlapping = await queryRunner.query(
+    //        'SELECT id FROM bookings WHERE roomId = $1 AND status IN ($2, $3) AND (checkInDate < $4 AND checkOutDate > $5) FOR UPDATE',
+    //        [input.roomId, 'CHECKED_IN', 'CONFIRMED', booking.checkOutDate, booking.checkInDate]
+    //      );
+    //      if (overlapping.length > 0) throw new Error('Room already assigned to another booking');
+    //   7. If paymentMethod provided, record payment
+    //   8. Update booking: status = CHECKED_IN, roomId = input.roomId
+    //   9. Update room: status = OCCUPIED
+    //   10. Create audit log
+    //   11. Commit transaction
+    //   12. If idempotencyKey provided, store result:
+    //       await this.idempotencyRepository.insert({
+    //         key: input.idempotencyKey,
+    //         operation: 'check-in',
+    //         result: JSON.stringify(response),
+    //         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    //       });
+    //   13. Return CheckInResponse
+    // } catch (error) {
+    //   await queryRunner.rollbackTransaction();
+    //   throw error;
+    // }
     
     throw new Error('Not implemented');
   }
 
   /**
    * Mutation: Check-out a guest
+   * 
+   * SECURITY:
+   * - @RequirePermission('bookings:update') or equivalent guard
+   * - Validate user has access to hotel (tenant isolation)
    * 
    * VALIDATIONS:
    * - bookingId must exist
@@ -225,9 +299,47 @@ export class CheckInCheckOutResolver {
     //    - If intra-state: CGST = SGST = (subtotal × GST rate) / 2
     // 7. Calculate total = subtotal + GST
     // 8. Generate invoice number (sequential, no gaps):
-    //    - Query last invoice number
-    //    - Increment: INV-YYYY-XXXXX
-    //    - Ensure no gaps (transaction-safe)
+    //    CRITICAL: Use database-level locking to prevent race conditions
+    //    
+    //    Option A: Database Sequence (PostgreSQL)
+    //    const sequence = await queryRunner.query(
+    //      "SELECT nextval('invoice_number_seq')"
+    //    );
+    //    const invoiceNumber = `INV-${year}-${String(sequence).padStart(5, '0')}`;
+    //    
+    //    Option B: Counter Table with Row Lock (MySQL/PostgreSQL)
+    //    await queryRunner.query('BEGIN');
+    //    const counter = await queryRunner.query(
+    //      'SELECT counter FROM invoice_counters WHERE hotel_id = $1 AND year = $2 FOR UPDATE',
+    //      [hotelId, year]
+    //    );
+    //    const nextNumber = counter[0].counter + 1;
+    //    await queryRunner.query(
+    //      'UPDATE invoice_counters SET counter = $1 WHERE hotel_id = $2 AND year = $3',
+    //      [nextNumber, hotelId, year]
+    //    );
+    //    const invoiceNumber = `INV-${year}-${String(nextNumber).padStart(5, '0')}`;
+    //    
+    //    Option C: Optimistic Locking with Retry
+    //    let retries = 3;
+    //    while (retries > 0) {
+    //      try {
+    //        const lastInvoice = await this.invoiceRepository.findOne({
+    //          where: { hotelId, year },
+    //          order: { invoiceNumber: 'DESC' }
+    //        });
+    //        const nextNumber = (lastInvoice?.sequenceNumber || 0) + 1;
+    //        // Use unique constraint on (hotelId, year, sequenceNumber)
+    //        await this.invoiceRepository.insert({ hotelId, year, sequenceNumber: nextNumber });
+    //        break;
+    //      } catch (error) {
+    //        if (error.code === '23505') { // Duplicate key
+    //          retries--;
+    //          if (retries === 0) throw error;
+    //          await new Promise(r => setTimeout(r, 100)); // Wait 100ms
+    //        } else throw error;
+    //      }
+    //    }
     // 9. Assign HSN code (9963 for room charges)
     // 10. Create invoice record
     // 11. Generate PDF invoice
@@ -239,6 +351,10 @@ export class CheckInCheckOutResolver {
 
   /**
    * Mutation: Record manual payment
+   * 
+   * SECURITY:
+   * - @RequirePermission('payments:view') or 'bookings:update'
+   * - Validate user has access to hotel (tenant isolation)
    * 
    * VALIDATIONS:
    * - bookingId must exist
@@ -279,6 +395,11 @@ export class CheckInCheckOutResolver {
   /**
    * Mutation: Process refund
    * 
+   * SECURITY:
+   * - @RequirePermission('payments:view') or 'bookings:update'
+   * - May require @RequirePermission('refunds:approve') for amounts > threshold
+   * - Validate user has access to hotel (tenant isolation)
+   * 
    * VALIDATIONS:
    * - bookingId must exist
    * - amount must be positive
@@ -302,24 +423,35 @@ export class CheckInCheckOutResolver {
   @Mutation('processRefund')
   async processRefund(@Args('input') input: RefundInput) {
     // TODO: Implement database transaction
-    // 1. Fetch booking (with payment history)
+    // 1. Fetch booking (with payment history AND existing refunds)
     // 2. Validate booking exists
     // 3. Validate amount > 0
     // 4. Calculate total paid amount (sum of all payments)
-    // 5. Validate amount <= total paid amount
-    // 6. Validate reason is valid
-    // 7. Validate refundMethod is valid
-    // 8. Check cancellation policy (if booking is cancellable)
-    // 9. Check if refund requires approval:
+    // 5. CRITICAL: Calculate total refunded amount (sum of existing refunds):
+    //    const totalRefunded = await queryRunner.query(
+    //      'SELECT COALESCE(SUM(amount), 0) as total FROM refunds WHERE booking_id = $1 AND status IN ($2, $3)',
+    //      [bookingId, 'PROCESSED', 'APPROVED']
+    //    );
+    //    const refundableAmount = totalPaid - totalRefunded[0].total;
+    // 6. Validate amount <= refundableAmount (NOT just totalPaid)
+    //    if (input.amount > refundableAmount) {
+    //      throw new BadRequestException(
+    //        `Cannot refund ${input.amount}. Maximum refundable: ${refundableAmount} (Paid: ${totalPaid}, Already refunded: ${totalRefunded[0].total})`
+    //      );
+    //    }
+    // 7. Validate reason is valid
+    // 8. Validate refundMethod is valid
+    // 9. Check cancellation policy (if booking is cancellable)
+    // 10. Check if refund requires approval:
     //    - If amount > threshold (e.g., ₹5000), status = PENDING
     //    - Otherwise, status = PROCESSED
-    // 10. Create refund record
-    // 11. If status = PROCESSED:
+    // 11. Create refund record
+    // 12. If status = PROCESSED:
     //     - Update booking: paidAmount -= input.amount
     //     - Update booking: paymentStatus (if fully refunded)
-    // 12. Create audit log
-    // 13. If status = PENDING, send notification to admin
-    // 14. Return ProcessRefundResponse
+    // 13. Create audit log
+    // 14. If status = PENDING, send notification to admin
+    // 15. Return ProcessRefundResponse
     
     throw new Error('Not implemented');
   }

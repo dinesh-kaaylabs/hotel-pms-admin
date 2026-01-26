@@ -12,7 +12,8 @@ import {
   UPDATE_ROOM_TYPE_MUTATION,
   DELETE_ROOM_TYPE_MUTATION,
   ROOM_INVENTORY_QUERY, 
-  BULK_UPDATE_INVENTORY_MUTATION 
+  BULK_UPDATE_INVENTORY_MUTATION,
+  ROOM_STATS_QUERY
 } from '../../graphql/room.gql';
 
 export interface PaginatedResponse<T> {
@@ -153,13 +154,19 @@ export const useUpdateRoom = (hotelId: string | null) => {
       
       return { previousRooms };
     },
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
       // Rollback on error
       if (context?.previousRooms) {
         context.previousRooms.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      
+      // Notify user that optimistic update was reverted
+      // Note: Toast hook should be used in component that calls this mutation
+      // This error will be caught by the component's error handler
+      const errorMessage = err instanceof Error ? err.message : 'Update failed';
+      console.error('Room update failed, changes reverted:', errorMessage);
     },
     onSuccess: () => {
       // Invalidate to ensure consistency
@@ -201,12 +208,16 @@ export const useDeleteRoom = (hotelId: string | null) => {
       
       return { previousRooms };
     },
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousRooms) {
         context.previousRooms.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      
+      // Notify user that optimistic update was reverted
+      const errorMessage = err instanceof Error ? err.message : 'Delete failed';
+      console.error('Room deletion failed, changes reverted:', errorMessage);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -269,7 +280,11 @@ export const useDeleteRoomType = (hotelId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const data = await graphqlRequest<{ deleteRoomType: { success: boolean } }>(DELETE_ROOM_TYPE_MUTATION, { id });
+      // Backend MUST validate:
+      // 1. No rooms exist with this roomTypeId
+      // 2. No active/future bookings reference this roomTypeId
+      // 3. Return clear error message if deletion blocked
+      const data = await graphqlRequest<{ deleteRoomType: { success: boolean; message?: string } }>(DELETE_ROOM_TYPE_MUTATION, { id });
       return data.deleteRoomType;
     },
     onSuccess: () => {
@@ -330,6 +345,36 @@ export const useRoomInventoryAdvanced = (filters: {
       return data.roomInventoryAdvanced;
     },
     enabled: !!filters.startDate && !!filters.endDate,
+  });
+};
+
+/**
+ * Hook to get room statistics (counts by status)
+ * Uses dedicated backend endpoint for accurate counts across all rooms
+ */
+export const useRoomStats = (hotelId: string | null) => {
+  return useQuery<{
+    total: number;
+    clean: number;
+    dirty: number;
+    occupied: number;
+    maintenance: number;
+    available: number;
+  }>({
+    queryKey: ['room-stats', hotelId],
+    queryFn: async () => {
+      const data = await graphqlRequest<{ roomStats: {
+        total: number;
+        clean: number;
+        dirty: number;
+        occupied: number;
+        maintenance: number;
+        available: number;
+      } }>(ROOM_STATS_QUERY);
+      return data.roomStats;
+    },
+    enabled: !!hotelId && hotelId !== 'pending',
+    staleTime: 1000 * 30, // 30 seconds - stats don't change frequently
   });
 };
 
