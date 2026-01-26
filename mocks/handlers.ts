@@ -824,8 +824,8 @@ export const handlers = [
     if (filters?.status) {
       filteredLogs = filteredLogs.filter(log => log.status === filters.status);
     }
-    if (filters?.recipient) {
-      filteredLogs = filteredLogs.filter(log => log.recipient.includes(filters.recipient));
+    if (filters?.guestId) {
+      filteredLogs = filteredLogs.filter(log => log.guestId === filters.guestId);
     }
 
     // Apply pagination
@@ -863,11 +863,11 @@ export const handlers = [
       });
     }
 
-    const { category } = variables as any;
+    const { channel } = variables as any;
     let templates = [...phase2CommunicationMockData.templates];
 
-    if (category) {
-      templates = templates.filter(t => t.category === category);
+    if (channel) {
+      templates = templates.filter(t => t.channel === channel);
     }
 
     return HttpResponse.json({
@@ -1075,7 +1075,6 @@ export const handlers = [
     const updatedLog = {
       ...log,
       status: 'PENDING' as const,
-      retryCount: log.retryCount + 1,
     };
 
     return HttpResponse.json({
@@ -1127,14 +1126,11 @@ export const handlers = [
     if (filters?.action) {
       filteredLogs = filteredLogs.filter(log => log.action === filters.action);
     }
-    if (filters?.actorId) {
-      filteredLogs = filteredLogs.filter(log => log.actor.id === filters.actorId);
+    if (filters?.userId) {
+      filteredLogs = filteredLogs.filter(log => log.userId === filters.userId);
     }
-    if (filters?.entityType) {
-      filteredLogs = filteredLogs.filter(log => log.entityType === filters.entityType);
-    }
-    if (filters?.entityId) {
-      filteredLogs = filteredLogs.filter(log => log.entityId === filters.entityId);
+    if (filters?.entity) {
+      filteredLogs = filteredLogs.filter(log => log.entity.includes(filters.entity));
     }
     if (filters?.dateFrom) {
       filteredLogs = filteredLogs.filter(log => log.timestamp >= filters.dateFrom);
@@ -1183,14 +1179,14 @@ export const handlers = [
       });
     }
 
-    // Compute diff
+    // Compute diff from before/after objects
     const diff: Record<string, any> = {};
-    if (log.beforeValues && log.afterValues) {
-      for (const key in log.afterValues) {
-        if (log.beforeValues[key] !== log.afterValues[key]) {
+    if (log.before && log.after) {
+      for (const key in log.after) {
+        if (log.before[key] !== log.after[key]) {
           diff[key] = {
-            before: log.beforeValues[key],
-            after: log.afterValues[key],
+            before: log.before[key],
+            after: log.after[key],
           };
         }
       }
@@ -1217,10 +1213,10 @@ export const handlers = [
         data: {
           phase2Audit: {
             userActivity: {
-              loginLogs: [],
-              logoutLogs: [],
-              permissionChanges: [],
-              roleChanges: [],
+              userId: null,
+              totalActions: 0,
+              lastActive: null,
+              topActions: [],
             },
           },
         },
@@ -1228,22 +1224,9 @@ export const handlers = [
     }
 
     const { userId, filters } = variables as any;
-    let activity = { ...phase2AuditMockData.userActivity };
+    const activity = { ...phase2AuditMockData.userActivity };
 
-    // Apply date filters if provided
-    if (filters?.dateFrom) {
-      activity.loginLogs = activity.loginLogs.filter(log => log.timestamp >= filters.dateFrom);
-      activity.logoutLogs = activity.logoutLogs.filter(log => log.timestamp >= filters.dateFrom);
-      activity.permissionChanges = activity.permissionChanges.filter(log => log.timestamp >= filters.dateFrom);
-      activity.roleChanges = activity.roleChanges.filter(log => log.timestamp >= filters.dateFrom);
-    }
-    if (filters?.dateTo) {
-      activity.loginLogs = activity.loginLogs.filter(log => log.timestamp <= filters.dateTo);
-      activity.logoutLogs = activity.logoutLogs.filter(log => log.timestamp <= filters.dateTo);
-      activity.permissionChanges = activity.permissionChanges.filter(log => log.timestamp <= filters.dateTo);
-      activity.roleChanges = activity.roleChanges.filter(log => log.timestamp <= filters.dateTo);
-    }
-
+    // Return activity summary (no date filtering needed as it's aggregate data)
     return HttpResponse.json({
       data: {
         phase2Audit: {
@@ -1290,10 +1273,10 @@ export const handlers = [
       filteredRequests = filteredRequests.filter(req => req.status === filters.status);
     }
     if (filters?.requesterId) {
-      filteredRequests = filteredRequests.filter(req => req.requester.id === filters.requesterId);
+      filteredRequests = filteredRequests.filter(req => req.requesterId === filters.requesterId);
     }
-    if (filters?.action) {
-      filteredRequests = filteredRequests.filter(req => req.action === filters.action);
+    if (filters?.type) {
+      filteredRequests = filteredRequests.filter(req => req.type === filters.type);
     }
     if (filters?.dateFrom) {
       filteredRequests = filteredRequests.filter(req => req.createdAt >= filters.dateFrom);
@@ -1404,22 +1387,11 @@ export const handlers = [
       });
     }
 
-    // Update approver status
-    const updatedApprovers = request.approvers.map(approver => ({
-      ...approver,
-      status: approver.status === 'PENDING' ? 'APPROVED' as const : approver.status,
-      approvedAt: approver.status === 'PENDING' ? '2025-05-20T14:00:00Z' : approver.approvedAt,
-      comments: approver.status === 'PENDING' ? comments : approver.comments,
-    }));
-
-    // Check if all approvers approved
-    const allApproved = updatedApprovers.every(a => a.status === 'APPROVED');
-    const newStatus = allApproved ? 'APPROVED' as const : 'PENDING' as const;
-
+    // Simulate approval (mock data doesn't have approvers array, just approverId)
     const updatedRequest = {
       ...request,
-      approvers: updatedApprovers,
-      status: newStatus,
+      status: 'APPROVED' as const,
+      approvedAt: '2025-05-20T14:00:00Z',
     };
 
     return HttpResponse.json({
@@ -1427,7 +1399,7 @@ export const handlers = [
         phase2Approval: {
           approve: {
             success: true,
-            message: allApproved ? 'Request approved and action executed' : 'Approval recorded',
+            message: 'Request approved and action executed',
             request: updatedRequest,
           },
         },
@@ -1748,11 +1720,11 @@ export const handlers = [
   graphql.query('GetSyncLogs', async ({ request, variables }) => {
     await delay(200);
     const hotelId = request.headers.get('X-Hotel-Id');
-    const { otaConnectionId, limit } = variables as any;
+    const { otaName, limit } = variables as any;
     let logs = channelManagerMockData.syncLogs.filter(l => !hotelId || l.hotelId === hotelId);
     
-    if (otaConnectionId) {
-      logs = logs.filter(l => l.otaConnectionId === otaConnectionId);
+    if (otaName) {
+      logs = logs.filter(l => l.otaName === otaName);
     }
     
     if (limit) {
@@ -1781,11 +1753,11 @@ export const handlers = [
   graphql.query('GetRoomMapping', async ({ request, variables }) => {
     await delay(200);
     const hotelId = request.headers.get('X-Hotel-Id');
-    const { otaConnectionId } = variables as any;
+    const { otaName } = variables as any;
     let mappings = channelManagerMockData.roomMapping.filter(m => !hotelId || m.hotelId === hotelId);
     
-    if (otaConnectionId) {
-      mappings = mappings.filter(m => m.otaConnectionId === otaConnectionId);
+    if (otaName) {
+      mappings = mappings.filter(m => m.otaName === otaName);
     }
     
     return HttpResponse.json({
@@ -1802,11 +1774,11 @@ export const handlers = [
   graphql.query('GetShifts', async ({ request, variables }) => {
     await delay(200);
     const hotelId = request.headers.get('X-Hotel-Id');
-    const { dateFrom, dateTo, staffId } = variables as any;
+    const { dateFrom, dateTo, userId } = variables as any;
     let shifts = staffOperationsMockData.shifts.filter(s => !hotelId || s.hotelId === hotelId);
     
-    if (staffId) {
-      shifts = shifts.filter(s => s.staffId === staffId);
+    if (userId) {
+      shifts = shifts.filter(s => s.userId === userId);
     }
     
     return HttpResponse.json({
@@ -1868,15 +1840,11 @@ export const handlers = [
 
   graphql.query('GetGuestDocuments', async ({ variables }) => {
     await delay(200);
-    const { guestId, bookingId } = variables as any;
+    const { guestId } = variables as any;
     let documents = documentsAttachmentsMockData.guestDocuments;
     
     if (guestId) {
       documents = documents.filter(d => d.guestId === guestId);
-    }
-    
-    if (bookingId) {
-      documents = documents.filter(d => d.bookingId === bookingId);
     }
     
     return HttpResponse.json({
@@ -1901,7 +1869,7 @@ export const handlers = [
   graphql.query('GetInvoiceDocuments', async ({ variables }) => {
     await delay(200);
     const { invoiceId } = variables as any;
-    const documents = documentsAttachmentsMockData.invoiceDocuments.filter(d => d.invoiceId === invoiceId);
+    const documents = documentsAttachmentsMockData.invoiceAttachments.filter(d => d.invoiceId === invoiceId);
     
     return HttpResponse.json({
       data: {
@@ -1912,9 +1880,15 @@ export const handlers = [
 
   graphql.query('GetDocumentCategories', async () => {
     await delay(200);
+    // Return standard document categories
+    const categories = [
+      { id: 'cat-01', name: 'Guest ID Proof', types: ['AADHAAR', 'PASSPORT', 'DRIVING_LICENSE'] },
+      { id: 'cat-02', name: 'Booking Documents', types: ['CONFIRMATION_EMAIL', 'CORPORATE_PO', 'VOUCHER'] },
+      { id: 'cat-03', name: 'Financial Documents', types: ['TAX_INVOICE', 'RECEIPT', 'CREDIT_NOTE'] }
+    ];
     return HttpResponse.json({
       data: {
-        documentCategories: documentsAttachmentsMockData.documentCategories,
+        documentCategories: categories,
       },
     });
   }),
@@ -1923,62 +1897,20 @@ export const handlers = [
   // SYSTEM CONFIG
   // =========================================================================
 
-  graphql.query('GetOverbookingRules', async ({ request }) => {
+  graphql.query('GetGlobalSettings', async () => {
     await delay(200);
-    const hotelId = request.headers.get('X-Hotel-Id');
-    const rules = systemConfigMockData.overbookingRules.filter(r => !hotelId || r.hotelId === hotelId);
-    
     return HttpResponse.json({
       data: {
-        overbookingRules: rules,
+        globalSettings: systemConfigMockData.globalSettings,
       },
     });
   }),
 
-  graphql.query('GetAutoRoomAssignment', async ({ request }) => {
+  graphql.query('GetIntegrations', async () => {
     await delay(200);
-    const hotelId = request.headers.get('X-Hotel-Id');
-    const config = systemConfigMockData.autoRoomAssignment.find(c => c.hotelId === hotelId);
-    
     return HttpResponse.json({
       data: {
-        autoRoomAssignment: config || null,
-      },
-    });
-  }),
-
-  graphql.query('GetLateCheckoutFees', async ({ request }) => {
-    await delay(200);
-    const hotelId = request.headers.get('X-Hotel-Id');
-    const fees = systemConfigMockData.lateCheckoutFees.filter(f => !hotelId || f.hotelId === hotelId);
-    
-    return HttpResponse.json({
-      data: {
-        lateCheckoutFees: fees,
-      },
-    });
-  }),
-
-  graphql.query('GetFeatureToggles', async ({ request }) => {
-    await delay(200);
-    const tenantId = request.headers.get('X-Tenant-Id') || 't-1';
-    const toggles = systemConfigMockData.featureToggles.filter(t => t.tenantId === tenantId);
-    
-    return HttpResponse.json({
-      data: {
-        featureToggles: toggles,
-      },
-    });
-  }),
-
-  graphql.query('GetEmailTemplates', async ({ request }) => {
-    await delay(200);
-    const hotelId = request.headers.get('X-Hotel-Id');
-    const templates = systemConfigMockData.emailTemplates.filter(t => !hotelId || t.hotelId === hotelId);
-    
-    return HttpResponse.json({
-      data: {
-        emailTemplates: templates,
+        integrations: systemConfigMockData.integrations,
       },
     });
   }),
@@ -2008,7 +1940,8 @@ export const handlers = [
   graphql.query('GetScheduledReports', async ({ request }) => {
     await delay(200);
     const hotelId = request.headers.get('X-Hotel-Id');
-    const scheduled = reportsExportMockData.scheduledReports.filter(s => !hotelId || s.hotelId === hotelId);
+    // Return empty array as scheduled reports are not yet implemented in mock data
+    const scheduled: any[] = [];
     
     return HttpResponse.json({
       data: {
