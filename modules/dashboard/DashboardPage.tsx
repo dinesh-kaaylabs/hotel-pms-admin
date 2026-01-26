@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { 
   Users, 
   BedDouble, 
@@ -26,7 +26,9 @@ import { PageTransition } from '../../app/layout/PageTransition';
 import { useReportSummary, useRevenueTrend } from '../reports/reports.api';
 import { useBookings } from '../bookings/bookings.api';
 import { useCurrency } from '../../providers/CurrencyProvider';
-import { GoogleGenAI } from "@google/genai";
+import { useMutation } from '@tanstack/react-query';
+import { graphqlRequest } from '../../api/graphqlRequest';
+import { GENERATE_AI_PULSE_MUTATION } from '../../graphql/dashboard.gql';
 import { BookingStatusBadge } from '../bookings/components/BookingStatusBadge';
 
 export const DashboardPage: React.FC = () => {
@@ -39,32 +41,35 @@ export const DashboardPage: React.FC = () => {
   const { data: recentBookingsData, isLoading: isBookingsLoading } = useBookings({ page: 1, pageSize: 5 });
 
   const [aiPulse, setAiPulse] = useState<string>('');
-  const [isGeneratingPulse, setIsGeneratingPulse] = useState(false);
 
-  const generateAIPulse = async () => {
-    if (!summary) return;
-    setIsGeneratingPulse(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `As a Hotel Operations AI, summarize the current property performance in 2 punchy sentences. 
-      Data: Revenue: ${summary.totalRevenue}, Occupancy: ${summary.occupancyRate}%, ADR: ${summary.adr}. 
-      Context: Comparing last 7 days.`;
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt
-      });
-      setAiPulse(response.text || 'Operations are within normal parameters.');
-    } catch (e) {
+  const generateAIPulseMutation = useMutation({
+    mutationFn: async (summaryData: { totalRevenue: number; occupancyRate: number; adr: number }) => {
+      const data = await graphqlRequest<{ generateAIPulse: { pulse: string; success: boolean } }>(
+        GENERATE_AI_PULSE_MUTATION,
+        { summary: summaryData }
+      );
+      return data.generateAIPulse;
+    },
+    onSuccess: (data) => {
+      setAiPulse(data.pulse || 'Operations are within normal parameters.');
+    },
+    onError: () => {
       setAiPulse('AI Pulse unavailable. Check connectivity.');
-    } finally {
-      setIsGeneratingPulse(false);
-    }
-  };
+    },
+  });
+
+  const generateAIPulse = useCallback(() => {
+    if (!summary) return;
+    generateAIPulseMutation.mutate({
+      totalRevenue: summary.totalRevenue,
+      occupancyRate: summary.occupancyRate,
+      adr: summary.adr,
+    });
+  }, [summary, generateAIPulseMutation]);
 
   useEffect(() => {
     if (summary) generateAIPulse();
-  }, [summary]);
+  }, [summary, generateAIPulse]);
 
   return (
     <PageTransition>
@@ -77,7 +82,8 @@ export const DashboardPage: React.FC = () => {
           <div className="flex gap-3">
             <button 
               onClick={() => refetchSummary()}
-              className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+              className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Refresh dashboard data"
             >
               <RefreshCcw size={20} />
             </button>
@@ -102,19 +108,21 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Executive AI Pulse</p>
-              {isGeneratingPulse ? (
+              {generateAIPulseMutation.isPending ? (
                 <div className="flex items-center gap-2 mt-1">
                   <Loader2 size={14} className="animate-spin text-white/50" />
                   <p className="text-sm font-medium text-white/70 animate-pulse">Analyzing operations...</p>
                 </div>
               ) : (
-                <p className="text-sm font-bold leading-snug max-w-2xl">{aiPulse}</p>
+                <p className="text-sm font-bold leading-snug max-w-2xl">{aiPulse || 'Click Re-Analyze to generate insights'}</p>
               )}
             </div>
           </div>
           <button 
             onClick={generateAIPulse}
-            className="hidden md:block px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+            className="hidden md:block px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+            aria-label="Regenerate AI pulse analysis"
+            disabled={generateAIPulseMutation.isPending}
           >
             Re-Analyze
           </button>

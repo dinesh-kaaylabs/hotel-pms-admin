@@ -64,7 +64,21 @@ graphqlClient.interceptors.response.use(
 
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject, config: originalRequest });
+          const timeout = setTimeout(() => {
+            reject(new Error('Token refresh timeout'));
+          }, 10000);
+          
+          failedQueue.push({ 
+            resolve: (val) => { 
+              clearTimeout(timeout); 
+              resolve(val); 
+            }, 
+            reject: (err) => { 
+              clearTimeout(timeout); 
+              reject(err); 
+            }, 
+            config: originalRequest 
+          });
         });
       }
 

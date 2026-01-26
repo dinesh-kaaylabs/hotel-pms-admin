@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { RequireRole } from '../auth/RequireRole';
 import { LoginPage } from '../auth/LoginPage';
+import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 
 // Lazy Loaded Modules
 const DashboardPage = lazy(() => import('../modules/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -57,8 +58,9 @@ const PageLoader = () => (
 
 export const AppRoutes: React.FC = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
         <Route path="/login" element={<LoginPage />} />
         
         <Route element={
@@ -236,7 +238,8 @@ export const AppRoutes: React.FC = () => {
         } />
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 };

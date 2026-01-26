@@ -4,22 +4,30 @@ import { Booking, BookingStatus, PaginatedResponse, Invoice, Payment } from './b
 import { BOOKINGS_QUERY, UPDATE_BOOKING_STATUS_MUTATION } from '../../graphql/booking.gql';
 
 export const useBookings = (params: { page: number; pageSize: number; search?: string; status?: string }) => {
-  console.log('[useBookings] Query params:', params);
-  
   return useQuery<PaginatedResponse<Booking>>({
     queryKey: ['bookings', params],
     queryFn: async () => {
-      console.log('[useBookings] Fetching with params:', params);
+      // TODO: Backend should return paginated response with totalCount
+      // Expected GraphQL response structure:
+      // type BookingsResponse {
+      //   data: [Booking!]!
+      //   totalCount: Int!
+      //   page: Int!
+      //   pageSize: Int!
+      // }
+      // 
+      // For now, backend returns array directly. Once backend is updated,
+      // update this query to use the paginated response structure.
       const data = await graphqlRequest<{ bookings: Booking[] }>(BOOKINGS_QUERY, params);
-      console.log('[useBookings] GraphQL response:', data);
-      const result = {
+      
+      // Temporary: Use array length as totalCount until backend provides actual totalCount
+      // This breaks pagination UI when there are more records than current page
+      return {
         data: data.bookings,
-        totalCount: data.bookings.length,
+        totalCount: data.bookings.length, // Backend must provide actual totalCount
         page: params.page,
         pageSize: params.pageSize
       };
-      console.log('[useBookings] Transformed result:', result);
-      return result;
     },
     placeholderData: (previousData) => previousData,
   });

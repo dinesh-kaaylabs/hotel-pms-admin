@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookings } from './bookings.api';
@@ -32,14 +32,10 @@ export const BookingsPage: React.FC = () => {
     status: status === 'ALL' ? undefined : status
   });
 
-  // Debug log to check data structure
-  React.useEffect(() => {
-    if (data) {
-      console.log('Bookings data:', data);
-    }
-  }, [data]);
-
-  const hasData = data && data.data && Array.isArray(data.data) && data.data.length > 0;
+  const hasData = useMemo(() => 
+    data && data.data && Array.isArray(data.data) && data.data.length > 0,
+    [data]
+  );
   const canCreate = hasPermission('bookings:update');
 
   const handleReset = () => {
@@ -63,7 +59,8 @@ export const BookingsPage: React.FC = () => {
           {canCreate && (
             <button 
               onClick={handleCreateBooking}
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              aria-label="Create new booking"
             >
               <Plus size={18} /> New Booking
             </button>

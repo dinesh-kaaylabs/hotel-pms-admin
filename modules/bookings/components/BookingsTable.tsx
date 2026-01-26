@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Booking } from '../bookings.types';
+import { Booking, PaymentStatus } from '../bookings.types';
 import { BookingStatusBadge } from './BookingStatusBadge';
 import { MoreVertical, Loader2, Info } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -29,7 +29,6 @@ export const BookingsTable: React.FC<TableProps> = ({
   totalCount
 }) => {
   const { format } = useCurrency();
-  console.log('[BookingsTable] Received bookings:', bookings.length, bookings);
 
   if (isLoading && bookings.length === 0) {
     return (
@@ -62,8 +61,17 @@ export const BookingsTable: React.FC<TableProps> = ({
           <div
             key={booking.id}
             onClick={() => onRowClick(booking)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onRowClick(booking);
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label={`View booking details for ${booking.guestName}, ${booking.bookingNumber}`}
             className={cn(
-              "w-full flex items-center px-6 py-4 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group",
+              "w-full flex items-center px-6 py-4 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset",
               index % 2 === 0 ? "bg-white" : "bg-slate-50/20"
             )}
           >
@@ -98,8 +106,8 @@ export const BookingsTable: React.FC<TableProps> = ({
                 <BookingStatusBadge status={booking.status} />
                 {booking.paymentStatus && (
                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                    booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
-                    booking.paymentStatus === 'PARTIALLY_PAID' ? 'bg-yellow-100 text-yellow-700' :
+                    booking.paymentStatus === PaymentStatus.PAID ? 'bg-green-100 text-green-700' :
+                    booking.paymentStatus === PaymentStatus.PARTIALLY_PAID ? 'bg-yellow-100 text-yellow-700' :
                     'bg-rose-100 text-rose-700'
                   }`}>
                     {booking.paymentStatus}
@@ -114,12 +122,15 @@ export const BookingsTable: React.FC<TableProps> = ({
                 <div className="text-[9px] text-slate-400 font-medium mt-0.5">{booking.source}</div>
               )}
               {booking.outstandingAmount !== undefined && booking.outstandingAmount > 0 && (
-                <div className="text-[9px] text-rose-600 font-bold mt-0.5">Due: ₹{booking.outstandingAmount.toLocaleString()}</div>
+                <div className="text-[9px] text-rose-600 font-bold mt-0.5">Due: {format(booking.outstandingAmount)}</div>
               )}
             </div>
 
             <div className="w-[5%] text-right opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="p-1.5 hover:bg-white rounded-lg text-slate-400 shadow-sm border border-transparent hover:border-slate-100">
+              <button 
+                className="p-1.5 hover:bg-white rounded-lg text-slate-400 shadow-sm border border-transparent hover:border-slate-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label={`More options for booking ${booking.bookingNumber}`}
+              >
                 <MoreVertical size={16} />
               </button>
             </div>

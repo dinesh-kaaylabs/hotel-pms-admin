@@ -32,13 +32,13 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   const createGuestMutation = useCreateGuest();
   const createBookingMutation = useCreateBooking();
   
-  const { data: pricing } = useBookingPricing(
+  const { data: pricing, isLoading: isPricingLoading } = useBookingPricing(
     roomTypeId || null,
     checkInDate,
     checkOutDate
   );
 
-  const { data: availableRooms } = useAvailableRooms(
+  const { data: availableRooms, isLoading: isRoomsLoading } = useAvailableRooms(
     roomTypeId || null,
     checkInDate,
     checkOutDate
@@ -128,7 +128,11 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   {step === 'confirm' && 'Confirm Booking'}
                 </p>
               </div>
-              <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <button 
+                onClick={handleClose} 
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                aria-label="Close drawer"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -144,6 +148,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                       value={guestId}
                       onChange={(e) => setGuestId(e.target.value)}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                      aria-label="Select guest"
                     >
                       <option value="">Choose existing guest...</option>
                       {guests?.map(guest => (
@@ -164,6 +169,8 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                           value={newGuest.name}
                           onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
                           className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                          aria-label="Guest name"
+                          aria-required="true"
                         />
                       </div>
                       <div>
@@ -173,6 +180,8 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                           value={newGuest.phone}
                           onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })}
                           className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                          aria-label="Guest phone"
+                          aria-required="true"
                         />
                       </div>
                       <div>
@@ -182,6 +191,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                           value={newGuest.email}
                           onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
                           className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                          aria-label="Guest email"
                         />
                       </div>
                       <button
@@ -207,6 +217,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                       value={roomTypeId}
                       onChange={(e) => setRoomTypeId(e.target.value)}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                      aria-label="Room type"
                     >
                       <option value="">Select room type...</option>
                       {roomTypes?.map(type => (
@@ -224,6 +235,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                         onChange={(e) => setCheckInDate(e.target.value)}
                         min={new Date().toISOString().split('T')[0]}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                        aria-label="Check-in date"
                       />
                     </div>
                     <div>
@@ -234,11 +246,23 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                         onChange={(e) => setCheckOutDate(e.target.value)}
                         min={checkInDate || new Date().toISOString().split('T')[0]}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                        aria-label="Check-out date"
                       />
                     </div>
                   </div>
 
-                  {pricing && (
+                  {isPricingLoading ? (
+                    <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <DollarSign size={18} className="text-indigo-600" />
+                        <h4 className="text-sm font-bold text-indigo-900">Pricing Summary</h4>
+                      </div>
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="animate-spin text-indigo-600" size={20} />
+                        <span className="ml-2 text-sm text-slate-600">Calculating pricing...</span>
+                      </div>
+                    </div>
+                  ) : pricing && (
                     <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
                       <div className="flex items-center gap-2 mb-3">
                         <DollarSign size={18} className="text-indigo-600" />
@@ -261,19 +285,24 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     </div>
                   )}
 
-                  {availableRooms && availableRooms.length > 0 && (
+                  {isRoomsLoading ? (
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="animate-spin text-slate-600" size={16} />
+                        <p className="text-sm text-slate-600">Checking room availability...</p>
+                      </div>
+                    </div>
+                  ) : availableRooms && availableRooms.length > 0 ? (
                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
                       <p className="text-sm font-bold text-emerald-900">
                         {availableRooms.length} room{availableRooms.length > 1 ? 's' : ''} available
                       </p>
                     </div>
-                  )}
-
-                  {roomTypeId && checkInDate && checkOutDate && availableRooms && availableRooms.length === 0 && (
+                  ) : roomTypeId && checkInDate && checkOutDate ? (
                     <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
                       <p className="text-sm font-bold text-amber-900">No rooms available for selected dates</p>
                     </div>
-                  )}
+                  ) : null}
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">Special Requests (Optional)</label>
@@ -283,6 +312,7 @@ export const CreateBookingDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                       rows={3}
                       placeholder="Any special requests or notes..."
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none resize-none"
+                      aria-label="Special requests"
                     />
                   </div>
                 </div>

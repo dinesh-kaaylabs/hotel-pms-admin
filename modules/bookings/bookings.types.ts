@@ -9,6 +9,7 @@ export enum BookingStatus {
 
 export enum PaymentStatus {
   PAID = 'PAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
   PENDING = 'PENDING',
   FAILED = 'FAILED',
   REFUNDED = 'REFUNDED'

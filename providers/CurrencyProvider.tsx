@@ -42,21 +42,10 @@ export const CURRENCY_CONFIG: Record<CurrencyCode, CurrencyConfig> = {
   },
 };
 
-// Mock conversion rates (1 unit in base currency = X in target currency)
-// Base: INR
-const CONVERSION_RATES: Record<CurrencyCode, number> = {
-  INR: 1,
-  USD: 1 / 83.2, // 1 USD = 83.2 INR (example rate)
-  EUR: 1 / 90.5, // 1 EUR = 90.5 INR
-  GBP: 1 / 105.2, // 1 GBP = 105.2 INR
-  AED: 1 / 22.7, // 1 AED = 22.7 INR
-};
-
 interface CurrencyContextType {
   currency: CurrencyCode;
   setCurrency: (code: CurrencyCode) => void;
   config: CurrencyConfig;
-  convert: (amount: number, fromCurrency?: CurrencyCode, toCurrency?: CurrencyCode) => number;
   format: (amount: number, options?: Intl.NumberFormatOptions) => string;
 }
 
@@ -98,29 +87,9 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const config = CURRENCY_CONFIG[currency];
 
   /**
-   * Convert amount between currencies
-   * @param amount - The amount to convert
-   * @param fromCurrency - Source currency (default: current currency)
-   * @param toCurrency - Target currency (default: current currency)
-   * @returns Converted amount
-   */
-  const convert = (
-    amount: number,
-    fromCurrency: CurrencyCode = currency,
-    toCurrency: CurrencyCode = currency
-  ): number => {
-    if (fromCurrency === toCurrency) return amount;
-    
-    // Convert to base (INR), then to target
-    const baseAmount = amount / CONVERSION_RATES[fromCurrency];
-    const convertedAmount = baseAmount * CONVERSION_RATES[toCurrency];
-    
-    return convertedAmount;
-  };
-
-  /**
    * Format amount with current currency
-   * @param amount - The amount to format
+   * Backend is source of truth for currency conversion - amounts should already be in user's selected currency
+   * @param amount - The amount to format (assumed to be in current currency)
    * @param options - Intl.NumberFormatOptions
    * @returns Formatted currency string
    */
@@ -141,7 +110,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, config, convert, format }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, config, format }}>
       {children}
     </CurrencyContext.Provider>
   );

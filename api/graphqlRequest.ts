@@ -12,6 +12,22 @@ export interface GraphQLResponse<T> {
 }
 
 /**
+ * GraphQL Error class for type-safe error handling
+ */
+export class GraphQLError extends Error {
+  code?: string;
+  extensions?: Record<string, any>;
+  
+  constructor(message: string, code?: string, extensions?: Record<string, any>) {
+    super(message);
+    this.code = code;
+    this.extensions = extensions;
+    this.name = 'GraphQLError';
+    Object.setPrototypeOf(this, GraphQLError.prototype);
+  }
+}
+
+/**
  * Standardized helper for executing GraphQL operations.
  * Wraps Axios to provide a clean, promise-based API for queries and mutations.
  * Enforces strict error extraction for UI feedback.
@@ -27,12 +43,7 @@ export async function graphqlRequest<T>(query: string, variables: Record<string,
     const message = error.message || 'Operation failed';
     const extensions = error.extensions || {};
     
-    // Create an augmented error object for the caller
-    const err = new Error(message) as any;
-    err.code = extensions.code;
-    err.extensions = extensions;
-    
-    throw err;
+    throw new GraphQLError(message, extensions.code, extensions);
   }
 
   return response.data.data;

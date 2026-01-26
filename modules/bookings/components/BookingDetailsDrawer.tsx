@@ -10,6 +10,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import { BookingInvoicePanel } from './BookingInvoicePanel';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { useToast } from '../../../components/ui/Toast';
+import { useCurrency } from '../../../providers/CurrencyProvider';
 
 interface DrawerProps {
   booking: Booking | null;
@@ -19,6 +20,7 @@ interface DrawerProps {
 export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }) => {
   const { user } = useAuth();
   const { success, error } = useToast();
+  const { format } = useCurrency();
   const updateStatus = useUpdateBookingStatus();
   const processRefund = useProcessRefund();
   
@@ -106,7 +108,11 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Booking Detail</p>
                 <h2 className="text-xl font-bold text-slate-900">{booking.bookingNumber}</h2>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <button 
+                onClick={onClose} 
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                aria-label="Close drawer"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -187,30 +193,30 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
                   <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600">Total Amount</span>
-                      <span className="font-bold text-slate-900">₹{booking.totalAmount.toLocaleString()}</span>
+                      <span className="font-bold text-slate-900">{format(booking.totalAmount)}</span>
                     </div>
                     {booking.paidAmount !== undefined && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Paid Amount</span>
-                        <span className="font-bold text-green-600">₹{booking.paidAmount.toLocaleString()}</span>
+                        <span className="font-bold text-green-600">{format(booking.paidAmount)}</span>
                       </div>
                     )}
                     {booking.outstandingAmount !== undefined && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Outstanding</span>
-                        <span className="font-bold text-rose-600">₹{booking.outstandingAmount.toLocaleString()}</span>
+                        <span className="font-bold text-rose-600">{format(booking.outstandingAmount)}</span>
                       </div>
                     )}
                     {booking.gstAmount !== undefined && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">GST Amount</span>
-                        <span className="font-medium text-slate-700">₹{booking.gstAmount.toLocaleString()}</span>
+                        <span className="font-medium text-slate-700">{format(booking.gstAmount)}</span>
                       </div>
                     )}
                     {booking.finalAmount !== undefined && booking.finalAmount !== booking.totalAmount && (
                       <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
                         <span className="font-bold text-slate-900">Final Amount</span>
-                        <span className="font-black text-slate-900">₹{booking.finalAmount.toLocaleString()}</span>
+                        <span className="font-black text-slate-900">{format(booking.finalAmount)}</span>
                       </div>
                     )}
                   </div>

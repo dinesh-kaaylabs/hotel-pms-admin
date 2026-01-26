@@ -34,8 +34,13 @@ export const HotelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveHotelId(hotelId);
     sessionStorage.setItem('pms_active_hotel_id', hotelId);
     
-    // 1. Invalidate all property-specific data
-    queryClient.invalidateQueries();
+    // 1. Invalidate only hotel-specific data (not theme, currency, etc.)
+    queryClient.invalidateQueries({ 
+      predicate: (query) => {
+        const key = query.queryKey[0];
+        return ['bookings', 'rooms', 'payments', 'invoices', 'guests', 'housekeeping', 'maintenance', 'pricing', 'reports', 'settlements'].includes(key as string);
+      }
+    });
     
     // 2. Clear sensitive cache immediately
     queryClient.removeQueries({ queryKey: ['me'] }); // Re-verify session context
