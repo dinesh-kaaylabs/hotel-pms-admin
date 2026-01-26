@@ -678,23 +678,84 @@ export const handlers = [
   }),
 
   graphql.query('Settlements', ({ variables }) => {
+    const filters = variables?.filters as any;
+    const startDate = filters?.startDate;
+    const endDate = filters?.endDate;
+    
+    // Generate settlements for the requested date range
+    const generatedSettlements: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate settlements for each day in the range (1-3 settlements per day)
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = financeMockData.settlements.filter(s => s.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(settlement => {
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount: settlement.totalAmount,
+              status: settlement.status,
+              settledAt: settlement.settledAt
+            });
+          });
+        } else {
+          // Generate default settlements for this date (1-3 per day)
+          const numSettlements = Math.floor(Math.random() * 3) + 1; // 1-3 settlements per day
+          
+          for (let i = 0; i < numSettlements; i++) {
+            // Use mock data as template or generate defaults
+            const template = financeMockData.settlements[Math.floor(Math.random() * financeMockData.settlements.length)];
+            const baseAmount = template?.totalAmount || 150000;
+            // Generate amount with variation (±30%)
+            const variation = (Math.random() * 0.6 - 0.3); // -0.3 to +0.3
+            const totalAmount = Math.round(baseAmount * (1 + variation));
+            
+            // Most settlements are SETTLED, some are PENDING
+            const isPending = Math.random() < 0.2; // 20% chance of pending
+            const status = isPending ? 'PENDING' : 'SETTLED';
+            const settledAt = status === 'SETTLED' 
+              ? new Date(new Date(dateStr).getTime() + 24 * 60 * 60 * 1000).toISOString()
+              : null;
+            
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount,
+              status,
+              settledAt
+            });
+          }
+        }
+      }
+    } else {
+      // If no date range provided, return all mock data
+      generatedSettlements.push(...financeMockData.settlements);
+    }
+    
     // Enrich settlements with computed fields
-    const enrichedSettlements = financeMockData.settlements.map(settlement => {
+    const enrichedSettlements = generatedSettlements.map((settlement, index) => {
       // Calculate commission and gateway fees (simplified - 5% commission, 2% gateway fee)
       const commission = Math.round(settlement.totalAmount * 0.05);
       const gatewayFee = Math.round(settlement.totalAmount * 0.02);
       const grossAmount = settlement.totalAmount + commission + gatewayFee;
       const netAmount = settlement.totalAmount;
       
-      // Determine source based on date pattern (simplified logic)
+      // Determine source based on index pattern
       const sources: Array<'RAZORPAY' | 'BOOKING_COM' | 'EXPEDIA' | 'DIRECT'> = ['RAZORPAY', 'BOOKING_COM', 'EXPEDIA', 'DIRECT'];
-      const sourceIndex = parseInt(settlement.id.split('-')[1]) % sources.length;
+      const sourceIndex = index % sources.length;
       const source = sources[sourceIndex];
       
       return {
-        id: settlement.id,
+        id: `set-${settlement.date}-${index}`,
         source,
-        referenceId: `REF-${settlement.id}`,
+        referenceId: `REF-${settlement.date}-${index}`,
         grossAmount,
         commission,
         gatewayFee,
@@ -707,21 +768,14 @@ export const handlers = [
       };
     });
     
-    // Apply filters if provided
+    // Apply additional filters if provided
     let filtered = enrichedSettlements;
-    const filters = variables?.filters as any;
     if (filters) {
       if (filters.source) {
         filtered = filtered.filter(s => s.source === filters.source);
       }
       if (filters.status) {
         filtered = filtered.filter(s => s.status === filters.status);
-      }
-      if (filters.startDate) {
-        filtered = filtered.filter(s => s.createdAt >= filters.startDate);
-      }
-      if (filters.endDate) {
-        filtered = filtered.filter(s => s.createdAt <= filters.endDate);
       }
     }
     
@@ -734,16 +788,68 @@ export const handlers = [
 
   graphql.query('SettlementSummary', ({ variables }) => {
     const { startDate, endDate } = variables as any;
-    const settlements = financeMockData.settlements.filter(s => {
-      if (startDate && s.date < startDate) return false;
-      if (endDate && s.date > endDate) return false;
-      return true;
-    });
     
-    const settled = settlements.filter(s => s.status === 'SETTLED');
-    const pending = settlements.filter(s => s.status === 'PENDING');
+    // Generate settlements for the requested date range (same logic as Settlements query)
+    const generatedSettlements: any[] = [];
     
-    const grossRevenue = settlements.reduce((sum, s) => sum + s.totalAmount, 0);
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate settlements for each day in the range (1-3 settlements per day)
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = financeMockData.settlements.filter(s => s.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(settlement => {
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount: settlement.totalAmount,
+              status: settlement.status,
+              settledAt: settlement.settledAt
+            });
+          });
+        } else {
+          // Generate default settlements for this date (1-3 per day)
+          const numSettlements = Math.floor(Math.random() * 3) + 1; // 1-3 settlements per day
+          
+          for (let i = 0; i < numSettlements; i++) {
+            // Use mock data as template or generate defaults
+            const template = financeMockData.settlements[Math.floor(Math.random() * financeMockData.settlements.length)];
+            const baseAmount = template?.totalAmount || 150000;
+            // Generate amount with variation (±30%)
+            const variation = (Math.random() * 0.6 - 0.3); // -0.3 to +0.3
+            const totalAmount = Math.round(baseAmount * (1 + variation));
+            
+            // Most settlements are SETTLED, some are PENDING
+            const isPending = Math.random() < 0.2; // 20% chance of pending
+            const status = isPending ? 'PENDING' : 'SETTLED';
+            const settledAt = status === 'SETTLED' 
+              ? new Date(new Date(dateStr).getTime() + 24 * 60 * 60 * 1000).toISOString()
+              : null;
+            
+            generatedSettlements.push({
+              date: dateStr,
+              totalAmount,
+              status,
+              settledAt
+            });
+          }
+        }
+      }
+    } else {
+      // If no date range provided, use all mock data
+      generatedSettlements.push(...financeMockData.settlements);
+    }
+    
+    const settled = generatedSettlements.filter(s => s.status === 'SETTLED');
+    const pending = generatedSettlements.filter(s => s.status === 'PENDING');
+    
+    const grossRevenue = generatedSettlements.reduce((sum, s) => sum + s.totalAmount, 0);
     const netReceivable = settled.reduce((sum, s) => sum + s.totalAmount, 0);
     const pendingPayout = pending.reduce((sum, s) => sum + s.totalAmount, 0);
     
@@ -1072,13 +1178,50 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetHotelSettings', () =>
-    HttpResponse.json({
-      data: {
-        hotelSettings: settingsMockData.hotelSettings
+  graphql.query('GetHotelSettings', ({ request }) => {
+    const hotelId = request.headers.get('X-Hotel-Id') || 'h-01';
+    
+    // Find the hotel
+    const hotel = hotelsMockData.hotels.find(h => h.id === hotelId);
+    if (!hotel) {
+      return HttpResponse.json({
+        errors: [{
+          message: 'Hotel not found',
+          extensions: { code: 'NOT_FOUND' }
+        }]
+      });
+    }
+    
+    // Find tenant for contact info
+    const tenant = tenantSubscriptionMockData.tenants.find(t => t.id === hotel.tenantId);
+    
+    // Find branding for this tenant
+    const branding = hotelsMockData.branding.find(b => b.tenantId === hotel.tenantId);
+    
+    // Construct hotelSettings object matching HotelSettings type
+    const hotelSettings = {
+      id: hotel.id,
+      name: hotel.name,
+      address: hotel.address,
+      city: hotel.city,
+      timezone: hotel.timezone,
+      currency: hotel.currency,
+      contactEmail: tenant?.contactEmail || 'contact@hotel.com',
+      contactPhone: tenant?.contactPhone || '+1 234 567 8900',
+      brand: {
+        name: hotel.name,
+        primaryColor: branding?.primaryColor || '#4f46e5',
+        theme: 'light' as const,
+        logoUrl: branding?.logoUrl
       }
-    })
-  ),
+    };
+    
+    return HttpResponse.json({
+      data: {
+        hotelSettings
+      }
+    });
+  }),
 
   graphql.query('GetStaffUsers', () =>
     HttpResponse.json({
@@ -1131,23 +1274,71 @@ export const handlers = [
   ),
 
   graphql.query('GetPricingCalendar', ({ variables }) => {
-    let calendar = pricingMockData.pricingCalendar;
+    const startDate = variables?.startDate;
+    const endDate = variables?.endDate;
+    const roomTypeId = variables?.roomTypeId;
     
-    // Filter by roomTypeId if provided
-    if (variables?.roomTypeId) {
-      calendar = calendar.filter(p => p.roomTypeId === variables.roomTypeId);
-    }
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
     
-    // Filter by date range if provided
-    if (variables?.startDate) {
-      calendar = calendar.filter(p => p.date >= variables.startDate);
-    }
-    if (variables?.endDate) {
-      calendar = calendar.filter(p => p.date <= variables.endDate);
+    // Generate pricing calendar for the requested date range
+    const generatedCalendar: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate pricing calendar for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = pricingMockData.pricingCalendar.filter(p => p.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(p => {
+            if (!roomTypeId || p.roomTypeId === roomTypeId) {
+              generatedCalendar.push({
+                date: dateStr,
+                roomTypeId: p.roomTypeId,
+                basePrice: p.basePrice,
+                adjustedPrice: p.adjustedPrice,
+                occupancy: p.occupancy
+              });
+            }
+          });
+        } else {
+          // Generate default pricing for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults based on room type basePrice
+            const template = pricingMockData.pricingCalendar.find(p => p.roomTypeId === rt.id);
+            const basePrice = template?.basePrice || rt.basePrice;
+            // Generate adjusted price with some variation (±20%)
+            const variation = (Math.random() * 0.4 - 0.2); // -0.2 to +0.2
+            const adjustedPrice = Math.round(basePrice * (1 + variation));
+            // Generate occupancy between 60-95%
+            const occupancy = Math.floor(Math.random() * 35) + 60;
+            
+            generatedCalendar.push({
+              date: dateStr,
+              roomTypeId: rt.id,
+              basePrice,
+              adjustedPrice,
+              occupancy
+            });
+          });
+        }
+      }
+    } else {
+      // If no date range provided, return all mock data
+      generatedCalendar.push(...pricingMockData.pricingCalendar);
     }
     
     // Enrich pricing calendar with ratePlanId and availableRooms
-    const enrichedCalendar = calendar.map(item => {
+    const enrichedCalendar = generatedCalendar.map(item => {
       // Get available rooms from inventory
       const inventory = roomsMockData.inventory.find(
         inv => inv.roomTypeId === item.roomTypeId && inv.date === item.date
