@@ -155,7 +155,7 @@ export const MainLayout: React.FC = () => {
               <img src={theme.logoUrl} alt={theme.name} className="w-8 h-8 object-contain flex-shrink-0" />
             ) : (
               <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold">{theme.name.charAt(0)}</span>
+                <span className="text-white font-bold">{theme.name?.charAt(0) || ''}</span>
               </div>
             )}
             {isSidebarOpen && (
