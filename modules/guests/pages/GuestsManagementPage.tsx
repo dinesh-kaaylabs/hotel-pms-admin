@@ -5,6 +5,8 @@ import { Guest, GuestNote, GuestStay } from '../guests.types';
 import { useToast } from '../../../components/ui/Toast';
 import { useCurrency } from '../../../providers/CurrencyProvider';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { getErrorMessage } from '../../../utils/errorHandling';
+import { formatDate, formatDateTime } from '../../../utils/date';
 
 export default function GuestsManagementPage() {
   const { data: guests = [], isLoading: loading } = useGuests();
@@ -62,8 +64,8 @@ export default function GuestsManagementPage() {
       success('Guest created successfully');
       setShowCreateModal(false);
       resetForm();
-    } catch (err: any) {
-      error(err?.message || 'Failed to create guest. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'create guest'));
     }
   };
 
@@ -92,8 +94,8 @@ export default function GuestsManagementPage() {
       setShowEditModal(false);
       setSelectedGuest(null);
       resetForm();
-    } catch (err: any) {
-      error(err?.message || 'Failed to update guest. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'update guest'));
     }
   };
 
@@ -103,8 +105,8 @@ export default function GuestsManagementPage() {
       await deleteGuestMutation.mutateAsync(deleteConfirm.guestId);
       success('Guest deleted successfully');
       setDeleteConfirm({ isOpen: false, guestId: null });
-    } catch (err: any) {
-      error(err?.message || 'Failed to delete guest. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'delete guest'));
       setDeleteConfirm({ isOpen: false, guestId: null });
     }
   };
@@ -118,8 +120,8 @@ export default function GuestsManagementPage() {
       });
       success('Note added successfully');
       setNewNote('');
-    } catch (err: any) {
-      error(err?.message || 'Failed to add note. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'add note'));
     }
   };
 
@@ -576,7 +578,7 @@ export default function GuestsManagementPage() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <p className="text-gray-600">Check-in</p>
-                          <p className="font-medium text-gray-900">{new Date(stay.checkInDate).toLocaleDateString()}</p>
+                          <p className="font-medium text-gray-900">{formatDate(stay.checkInDate)}</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Room</p>
@@ -615,7 +617,7 @@ export default function GuestsManagementPage() {
               {getGuestNotes(selectedGuest.id).map(note => (
                 <div key={note.id} className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-900 mb-2">{note.content}</p>
-                  <p className="text-xs text-gray-500">{new Date(note.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">{formatDateTime(note.createdAt)}</p>
                 </div>
               ))}
               {getGuestNotes(selectedGuest.id).length === 0 && (

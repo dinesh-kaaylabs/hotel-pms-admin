@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED';
 
@@ -64,6 +64,11 @@ const DEFAULT_CURRENCY: CurrencyCode = 'INR';
  * USAGE:
  * const { currency, setCurrency, format } = useCurrency();
  * <div>{format(1000)}</div>  // ₹1,000.00
+ * 
+ * @remarks
+ * - format function is memoized to prevent recreation on every render
+ * - Intl.NumberFormat instances are cached for performance
+ * - No memory leaks from function recreation or formatter instances
  */
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<CurrencyCode>(DEFAULT_CURRENCY);
@@ -77,14 +82,19 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setMounted(true);
   }, []);
 
-  const setCurrency = (code: CurrencyCode) => {
+  // Memoized setCurrency to prevent recreation
+  const setCurrency = useCallback((code: CurrencyCode) => {
     if (code in CURRENCY_CONFIG) {
       setCurrencyState(code);
       localStorage.setItem(CURRENCY_STORAGE_KEY, code);
     }
-  };
+  }, []);
 
-  const config = CURRENCY_CONFIG[currency];
+  // Memoized config to prevent recreation
+  const config = useMemo(() => CURRENCY_CONFIG[currency], [currency]);
+
+  // Memoized formatter cache to prevent recreation of Intl.NumberFormat instances
+  const formatterCache = useMemo(() => new Map<string, Intl.NumberFormat>(), []);
 
   /**
    * Format amount with current currency
@@ -92,17 +102,37 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
    * @param amount - The amount to format (assumed to be in current currency)
    * @param options - Intl.NumberFormatOptions
    * @returns Formatted currency string
+   * 
+   * @remarks
+   * - Memoized with useCallback to prevent recreation on every render
+   * - Caches Intl.NumberFormat instances for performance
+   * - Cache key includes currency and serialized options
    */
-  const format = (amount: number, options?: Intl.NumberFormatOptions): string => {
-    const formatter = new Intl.NumberFormat(config.locale, {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      ...options,
-    });
+  const format = useCallback((amount: number, options?: Intl.NumberFormatOptions): string => {
+    const cacheKey = `${currency}-${JSON.stringify(options || {})}`;
+    
+    let formatter = formatterCache.get(cacheKey);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(config.locale, {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        ...options,
+      });
+      formatterCache.set(cacheKey, formatter);
+    }
+    
     return formatter.format(amount);
-  };
+  }, [currency, config.locale, formatterCache]);
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    currency,
+    setCurrency,
+    config,
+    format,
+  }), [currency, setCurrency, config, format]);
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -110,7 +140,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, config, format }}>
+    <CurrencyContext.Provider value={contextValue}>
       {children}
     </CurrencyContext.Provider>
   );

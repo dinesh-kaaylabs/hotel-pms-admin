@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookings } from './bookings.api';
 import { BookingsTable } from './components/BookingsTable';
@@ -98,14 +98,25 @@ export const BookingsPage: React.FC = () => {
               />
             </div>
           ) : (
-            <BookingsTable 
-              bookings={data?.data || []} 
-              isLoading={isLoading || isPlaceholderData} 
-              onRowClick={(b) => setSelectedBooking(b)} 
-              page={page}
-              pageSize={pageSize}
-              totalCount={data?.totalCount || 0}
-            />
+            <div className="relative">
+              {/* Refetch overlay - shows when data exists but is being refreshed */}
+              {isPlaceholderData && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white px-4 py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-2">
+                    <Loader2 className="animate-spin text-indigo-600" size={16} />
+                    <span className="text-sm font-medium text-slate-700">Refreshing...</span>
+                  </div>
+                </div>
+              )}
+              <BookingsTable 
+                bookings={data?.data || []} 
+                isLoading={false} 
+                onRowClick={(b) => setSelectedBooking(b)} 
+                page={page}
+                pageSize={pageSize}
+                totalCount={data?.totalCount || 0}
+              />
+            </div>
           )}
 
           {/* Pagination Footer */}

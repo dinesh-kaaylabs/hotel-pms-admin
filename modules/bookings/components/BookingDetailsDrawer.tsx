@@ -11,6 +11,7 @@ import { BookingInvoicePanel } from './BookingInvoicePanel';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { useToast } from '../../../components/ui/Toast';
 import { useCurrency } from '../../../providers/CurrencyProvider';
+import { getErrorMessage } from '../../../utils/errorHandling';
 
 interface DrawerProps {
   booking: Booking | null;
@@ -44,8 +45,8 @@ export const BookingDetailsDrawer: React.FC<DrawerProps> = ({ booking, onClose }
       success('Booking status updated successfully');
       setConfirmConfig(null);
       onClose();
-    } catch (err: any) {
-      error(err?.message || 'Failed to update booking status. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'update booking status'));
       setConfirmConfig(null);
     }
   };

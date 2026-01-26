@@ -27,14 +27,20 @@ export const HotelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   const [hotels, setHotels] = useState<HotelContext[]>([]);
 
-  const setActiveHotel = useCallback((hotelId: string) => {
+  const setActiveHotel = useCallback(async (hotelId: string) => {
     const hotel = hotels.find(h => h.id === hotelId);
     if (!hotel) return;
 
-    setActiveHotelId(hotelId);
+    // 1. Update sessionStorage FIRST (synchronously)
     sessionStorage.setItem('pms_active_hotel_id', hotelId);
     
-    // 1. Invalidate only hotel-specific data (not theme, currency, etc.)
+    // 2. Update state (this triggers re-renders)
+    setActiveHotelId(hotelId);
+    
+    // 3. Wait for next tick to ensure sessionStorage is flushed
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // 4. Now invalidate queries - they will use the new hotel ID
     queryClient.invalidateQueries({ 
       predicate: (query) => {
         const key = query.queryKey[0];
@@ -42,7 +48,7 @@ export const HotelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     });
     
-    // 2. Clear sensitive cache immediately
+    // 5. Clear sensitive cache immediately
     queryClient.removeQueries({ queryKey: ['me'] }); // Re-verify session context
     
     success(`Switched context to ${hotel.name}`);

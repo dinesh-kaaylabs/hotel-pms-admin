@@ -156,3 +156,33 @@ export const useRoomInventoryAdvanced = (filters: {
     enabled: !!filters.startDate && !!filters.endDate,
   });
 };
+
+/**
+ * Hook to get room inventory summary by room type for dashboard widget
+ * Groups rooms by type and calculates available vs total
+ */
+export const useRoomInventorySummary = () => {
+  const { data: rooms = [] } = useRooms();
+  const { data: roomTypes = [] } = useRoomTypes();
+
+  return useQuery({
+    queryKey: ['room-inventory-summary', rooms.length, roomTypes.length],
+    queryFn: () => {
+      // Group rooms by type and calculate availability
+      const summary = roomTypes.map(type => {
+        const typeRooms = rooms.filter(r => r.roomTypeId === type.id);
+        const availableRooms = typeRooms.filter(r => r.status === 'CLEAN' || r.status === 'AVAILABLE');
+        
+        return {
+          type: type.name,
+          count: availableRooms.length,
+          total: typeRooms.length,
+          roomTypeId: type.id,
+        };
+      }).filter(item => item.total > 0); // Only show types that have rooms
+
+      return summary;
+    },
+    enabled: rooms.length > 0 && roomTypes.length > 0,
+  });
+};

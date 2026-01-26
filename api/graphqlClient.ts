@@ -4,10 +4,15 @@ interface FailedRequest {
   resolve: (value: any) => void;
   reject: (reason?: any) => void;
   config: InternalAxiosRequestConfig;
+  timestamp: number;
 }
 
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 3;
+const QUEUE_TIMEOUT = 10000; // 10 seconds
+const REFRESH_COOLDOWN = 5000; // 5 seconds between refresh attempts
 
 const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
@@ -15,6 +20,12 @@ const processQueue = (error: any) => {
     else prom.resolve(graphqlClient(prom.config));
   });
   failedQueue = [];
+};
+
+// Clean up stale requests from queue
+const cleanupQueue = () => {
+  const now = Date.now();
+  failedQueue = failedQueue.filter(req => now - req.timestamp < QUEUE_TIMEOUT);
 };
 
 /**
@@ -63,11 +74,22 @@ graphqlClient.interceptors.response.use(
         return Promise.reject(authError);
       }
 
+      // Check if we've exceeded max refresh attempts
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        processQueue(new Error('MAX_REFRESH_ATTEMPTS_EXCEEDED'));
+        window.dispatchEvent(new CustomEvent('auth:session-expired'));
+        refreshAttempts = 0; // Reset for next session
+        return Promise.reject(new Error('Too many refresh attempts. Please log in again.'));
+      }
+
       if (isRefreshing) {
+        // Clean up stale requests before adding new one
+        cleanupQueue();
+        
         return new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error('Token refresh timeout'));
-          }, 10000);
+          }, QUEUE_TIMEOUT);
           
           failedQueue.push({ 
             resolve: (val) => { 
@@ -78,12 +100,14 @@ graphqlClient.interceptors.response.use(
               clearTimeout(timeout); 
               reject(err); 
             }, 
-            config: originalRequest 
+            config: originalRequest,
+            timestamp: Date.now()
           });
         });
       }
 
       isRefreshing = true;
+      refreshAttempts++;
 
       // Trigger GraphQL-based token refresh
       return new Promise((resolve, reject) => {
@@ -92,6 +116,7 @@ graphqlClient.interceptors.response.use(
         })
         .then(({ data: refreshData }) => {
           if (refreshData.data?.refreshToken?.success) {
+            refreshAttempts = 0; // Reset on success
             processQueue(null);
             resolve(graphqlClient(originalRequest));
           } else {
@@ -100,12 +125,24 @@ graphqlClient.interceptors.response.use(
         })
         .catch((err) => {
           processQueue(err);
-          // Emit session expired event for app-level handling
-          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          
+          // Only emit session expired if we've exhausted retries
+          if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+            window.dispatchEvent(new CustomEvent('auth:session-expired'));
+            refreshAttempts = 0;
+          }
+          
           reject(err);
         })
         .finally(() => {
           isRefreshing = false;
+          
+          // Cleanup queue after processing
+          setTimeout(() => {
+            if (failedQueue.length > 0) {
+              cleanupQueue();
+            }
+          }, 1000);
         });
       });
     }

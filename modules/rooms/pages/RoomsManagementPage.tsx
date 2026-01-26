@@ -5,6 +5,7 @@ import { Room, RoomType } from '../rooms.types';
 import { useToast } from '../../../components/ui/Toast';
 import { useCurrency } from '../../../providers/CurrencyProvider';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { getErrorMessage } from '../../../utils/errorHandling';
 
 export default function RoomsManagementPage() {
   const { data: rooms = [], isLoading: loading } = useRooms();
@@ -58,8 +59,8 @@ export default function RoomsManagementPage() {
       success('Room created successfully');
       setShowCreateRoomModal(false);
       resetRoomForm();
-    } catch (err: any) {
-      error(err?.message || 'Failed to create room. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'create room'));
     }
   };
 
@@ -80,8 +81,8 @@ export default function RoomsManagementPage() {
       setShowEditRoomModal(false);
       setSelectedRoom(null);
       resetRoomForm();
-    } catch (err: any) {
-      error(err?.message || 'Failed to update room. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'update room'));
     }
   };
 
@@ -99,8 +100,8 @@ export default function RoomsManagementPage() {
       success('Room type created successfully');
       setShowCreateTypeModal(false);
       resetTypeForm();
-    } catch (err: any) {
-      error(err?.message || 'Failed to create room type. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'create room type'));
     }
   };
 
@@ -110,8 +111,8 @@ export default function RoomsManagementPage() {
       await deleteRoomMutation.mutateAsync(deleteRoomConfirm.roomId);
       success('Room deleted successfully');
       setDeleteRoomConfirm({ isOpen: false, roomId: null });
-    } catch (err: any) {
-      error(err?.message || 'Failed to delete room. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'delete room'));
       setDeleteRoomConfirm({ isOpen: false, roomId: null });
     }
   };
@@ -122,8 +123,8 @@ export default function RoomsManagementPage() {
       await deleteRoomTypeMutation.mutateAsync(deleteTypeConfirm.typeId);
       success('Room type deleted successfully');
       setDeleteTypeConfirm({ isOpen: false, typeId: null });
-    } catch (err: any) {
-      error(err?.message || 'Failed to delete room type. Please try again.');
+    } catch (err) {
+      error(getErrorMessage(err, 'delete room type'));
       setDeleteTypeConfirm({ isOpen: false, typeId: null });
     }
   };

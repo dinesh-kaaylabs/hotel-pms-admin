@@ -30,6 +30,7 @@ import { useMutation } from '@tanstack/react-query';
 import { graphqlRequest } from '../../api/graphqlRequest';
 import { GENERATE_AI_PULSE_MUTATION } from '../../graphql/dashboard.gql';
 import { BookingStatusBadge } from '../bookings/components/BookingStatusBadge';
+import { useRoomInventorySummary } from '../rooms/rooms.api';
 
 export const DashboardPage: React.FC = () => {
   const { format } = useCurrency();
@@ -39,6 +40,7 @@ export const DashboardPage: React.FC = () => {
   const { data: summary, isLoading: isSummaryLoading, refetch: refetchSummary } = useReportSummary({ startDate: lastWeek, endDate: today });
   const { data: revenueTrend, isLoading: isRevenueLoading } = useRevenueTrend({ startDate: lastWeek, endDate: today });
   const { data: recentBookingsData, isLoading: isBookingsLoading } = useBookings({ page: 1, pageSize: 5 });
+  const { data: roomInventory, isLoading: isInventoryLoading } = useRoomInventorySummary();
 
   const [aiPulse, setAiPulse] = useState<string>('');
 
@@ -196,26 +198,37 @@ export const DashboardPage: React.FC = () => {
           <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm flex flex-col">
             <h3 className="font-bold text-slate-900 mb-6 text-[10px] uppercase tracking-[0.2em] text-slate-400">Inventory Health</h3>
             <div className="flex-1 space-y-6">
-              {[
-                { type: 'Deluxe Suites', count: 8, total: 10, color: 'bg-indigo-500' },
-                { type: 'Standard Rooms', count: 15, total: 20, color: 'bg-emerald-500' },
-                { type: 'Penthouse', count: 1, total: 2, color: 'bg-amber-500' },
-              ].map((room) => (
-                <div key={room.type}>
-                  <div className="flex justify-between text-xs mb-2">
-                    <span className="text-slate-600 font-bold">{room.type}</span>
-                    <span className="text-slate-900 font-black">{room.count} / {room.total} Available</span>
-                  </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(room.count / room.total) * 100}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className={cn("h-full rounded-full", room.color)} 
-                    />
-                  </div>
+              {isInventoryLoading ? (
+                <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center">
+                  <Loader2 className="animate-spin text-slate-200" />
                 </div>
-              ))}
+              ) : (roomInventory && roomInventory.length > 0) ? (
+                roomInventory.slice(0, 3).map((room, index) => {
+                  const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'];
+                  const color = colors[index % colors.length];
+                  
+                  return (
+                    <div key={room.roomTypeId}>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-slate-600 font-bold">{room.type}</span>
+                        <span className="text-slate-900 font-black">{room.count} / {room.total} Available</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${room.total > 0 ? (room.count / room.total) * 100 : 0}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className={cn("h-full rounded-full", color)} 
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-slate-400 text-sm py-8">
+                  No room inventory data available
+                </div>
+              )}
             </div>
             <button className="mt-8 w-full py-3.5 flex items-center justify-center gap-2 bg-slate-50 text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 rounded-2xl transition-all border border-slate-100">
               Manage Grid <ChevronRight size={14} />
