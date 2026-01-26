@@ -2,7 +2,8 @@
 import React from 'react';
 import { RoomInventory } from '../rooms.types';
 import { RoomStatusBadge } from './RoomStatusBadge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
+import { EmptyState } from '../../../components/ui/EmptyState';
 
 interface Props {
   data: RoomInventory[];
@@ -15,6 +16,16 @@ export const InventoryTable: React.FC<Props> = ({ data, isLoading }) => {
       <div className="h-[400px] flex items-center justify-center">
         <Loader2 className="animate-spin text-indigo-600" size={32} />
       </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <EmptyState
+        icon={Calendar}
+        title="No Inventory Data"
+        description="No room inventory data found for the selected date range. Try adjusting your filters or date range."
+      />
     );
   }
 

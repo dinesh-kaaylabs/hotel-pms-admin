@@ -251,16 +251,28 @@ export const handlers = [
     })
   ),
 
-  graphql.query('GetBookingInvoice', ({ variables }) =>
-    HttpResponse.json({
+  graphql.query('GetBookingInvoice', ({ variables }) => {
+    const invoice = bookingsMockData.invoices[0];
+    const totalAmount = invoice.amount || 0;
+    // Calculate netAmount and taxAmount assuming 18% GST
+    const netAmount = Math.round((totalAmount / 1.18) * 100) / 100;
+    const taxAmount = Math.round((totalAmount - netAmount) * 100) / 100;
+    // Convert issuedAt to issueDate format (YYYY-MM-DD)
+    const issueDate = invoice.issuedAt ? invoice.issuedAt.split('T')[0] : new Date().toISOString().split('T')[0];
+    
+    return HttpResponse.json({
       data: {
         bookingInvoice: {
-          ...bookingsMockData.invoices[0],
-          invoiceNumber: `INV-${variables.bookingId || 'LS-9901'}`
+          invoiceNumber: `INV-${variables.bookingId || 'LS-9901'}`,
+          issueDate,
+          netAmount,
+          taxAmount,
+          totalAmount,
+          pdfUrl: `/invoices/INV-${variables.bookingId || 'LS-9901'}.pdf`
         }
       }
-    })
-  ),
+    });
+  }),
 
   // =========================================================================
   // ROOMS & INVENTORY
@@ -353,23 +365,67 @@ export const handlers = [
   ),
 
   graphql.query('GetRoomInventory', ({ variables }) => {
-    let inventory = roomsMockData.inventory;
+    const startDate = variables?.startDate;
+    const endDate = variables?.endDate;
+    const roomTypeId = variables?.roomTypeId;
     
-    // Filter by roomTypeId if provided
-    if (variables?.roomTypeId) {
-      inventory = inventory.filter(inv => inv.roomTypeId === variables.roomTypeId);
-    }
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
     
-    // Filter by date range if provided
-    if (variables?.startDate) {
-      inventory = inventory.filter(inv => inv.date >= variables.startDate);
-    }
-    if (variables?.endDate) {
-      inventory = inventory.filter(inv => inv.date <= variables.endDate);
+    // Generate inventory for the requested date range
+    const generatedInventory: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate inventory for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = roomsMockData.inventory.filter(inv => inv.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(inv => {
+            if (!roomTypeId || inv.roomTypeId === roomTypeId) {
+              generatedInventory.push({
+                id: inv.id,
+                roomTypeId: inv.roomTypeId,
+                date: inv.date,
+                totalRooms: inv.totalRooms,
+                availableRooms: inv.availableRooms
+              });
+            }
+          });
+        } else {
+          // Generate default inventory for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults
+            const template = roomsMockData.inventory.find(inv => inv.roomTypeId === rt.id);
+            const totalRooms = template?.totalRooms || 10;
+            const availableRooms = template?.availableRooms || Math.floor(totalRooms * 0.7);
+            
+            generatedInventory.push({
+              id: `inv-${rt.id}-${dateStr}`,
+              roomTypeId: rt.id,
+              date: dateStr,
+              totalRooms,
+              availableRooms
+            });
+          });
+        }
+      }
+    } else {
+      // If no date range provided, return all mock data
+      generatedInventory.push(...roomsMockData.inventory);
     }
     
     // Enrich inventory with status based on availability
-    const enrichedInventory = inventory.map(inv => {
+    const enrichedInventory = generatedInventory.map(inv => {
       let status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' = 'AVAILABLE';
       
       if (inv.availableRooms === 0) {
@@ -379,7 +435,11 @@ export const handlers = [
       }
       
       return {
-        ...inv,
+        id: inv.id,
+        roomTypeId: inv.roomTypeId,
+        date: inv.date,
+        totalRooms: inv.totalRooms,
+        availableRooms: inv.availableRooms,
         status
       };
     });
@@ -387,6 +447,104 @@ export const handlers = [
     return HttpResponse.json({
       data: {
         roomInventory: enrichedInventory
+      }
+    });
+  }),
+
+  graphql.query('RoomInventoryAdvancedFilters', ({ variables }) => {
+    const filters = variables?.filters || {};
+    const startDate = filters.startDate;
+    const endDate = filters.endDate;
+    const roomTypeId = filters.roomTypeId;
+    
+    // Get all room types if no specific roomTypeId is provided
+    const roomTypesToUse = roomTypeId 
+      ? roomsMockData.roomTypes.filter(rt => rt.id === roomTypeId)
+      : roomsMockData.roomTypes;
+    
+    // Generate inventory for the requested date range
+    const generatedInventory: any[] = [];
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Generate inventory for each day in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Check if we have mock data for this date
+        const mockDataForDate = roomsMockData.inventory.filter(inv => inv.date === dateStr);
+        
+        if (mockDataForDate.length > 0) {
+          // Use mock data if available
+          mockDataForDate.forEach(inv => {
+            if (!roomTypeId || inv.roomTypeId === roomTypeId) {
+              generatedInventory.push({
+                id: inv.id,
+                roomTypeId: inv.roomTypeId,
+                date: inv.date,
+                totalRooms: inv.totalRooms,
+                availableRooms: inv.availableRooms
+              });
+            }
+          });
+        } else {
+          // Generate default inventory for each room type
+          roomTypesToUse.forEach(rt => {
+            // Use mock data as template or generate defaults
+            const template = roomsMockData.inventory.find(inv => inv.roomTypeId === rt.id);
+            const totalRooms = template?.totalRooms || 10;
+            const availableRooms = template?.availableRooms || Math.floor(totalRooms * 0.7);
+            
+            generatedInventory.push({
+              id: `inv-${rt.id}-${dateStr}`,
+              roomTypeId: rt.id,
+              date: dateStr,
+              totalRooms,
+              availableRooms
+            });
+          });
+        }
+      }
+    } else {
+      // If no date range provided, return all mock data
+      generatedInventory.push(...roomsMockData.inventory);
+    }
+    
+    // Enrich inventory with status based on availability
+    let enrichedInventory = generatedInventory.map(inv => {
+      let status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' = 'AVAILABLE';
+      
+      if (inv.availableRooms === 0) {
+        status = 'BLOCKED';
+      } else if (inv.availableRooms < inv.totalRooms * 0.2) {
+        status = 'BOOKED'; // Less than 20% available
+      }
+      
+      return {
+        id: inv.id,
+        roomTypeId: inv.roomTypeId,
+        date: inv.date,
+        totalRooms: inv.totalRooms,
+        availableRooms: inv.availableRooms,
+        status
+      };
+    });
+    
+    // Filter by status if provided
+    if (filters.status) {
+      enrichedInventory = enrichedInventory.filter(inv => inv.status === filters.status);
+    }
+    
+    // Filter by minimum availability if provided
+    if (filters.minAvailability !== undefined && filters.minAvailability !== null) {
+      enrichedInventory = enrichedInventory.filter(inv => inv.availableRooms >= filters.minAvailability);
+    }
+    
+    return HttpResponse.json({
+      data: {
+        roomInventoryAdvanced: enrichedInventory
       }
     });
   }),
