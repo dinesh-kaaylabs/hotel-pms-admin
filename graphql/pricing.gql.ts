@@ -4,8 +4,10 @@ export const RATE_PLANS_QUERY = `
     ratePlans {
       id
       name
+      hotelId
       roomTypeId
       roomTypeName
+      mealPlan
       status
       refundable
       minNights
@@ -38,7 +40,10 @@ export const PRICING_CALENDAR_QUERY = `
       date
       roomTypeId
       ratePlanId
+      basePrice
+      adjustedPrice
       price
+      occupancy
       availableRooms
       closed
     }

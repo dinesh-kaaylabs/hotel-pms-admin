@@ -17,6 +17,8 @@ export enum PaymentStatus {
 export interface Booking {
   id: string;
   bookingNumber: string;
+  hotelId?: string;
+  guestId?: string;
   guestName: string;
   roomType: string;
   roomNumber: string;
@@ -29,6 +31,13 @@ export interface Booking {
   outstandingAmount?: number; // Backend-provided: amount still owed
   finalAmount?: number; // Backend-provided: final amount including additional charges
   gstAmount?: number; // Backend-provided: GST amount
+  source?: string; // Booking source (Direct, Booking.com, Expedia, etc.)
+  sourceId?: string; // Source identifier
+  arrivalTime?: string; // Expected arrival time
+  departureTime?: string; // Expected departure time
+  cancellationPolicy?: string; // Cancellation policy details
+  noShowPolicy?: string; // No-show policy details
+  assignedAt?: string; // When room was assigned
   createdAt: string;
 }
 

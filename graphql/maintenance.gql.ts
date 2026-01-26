@@ -2,7 +2,22 @@
 export const MAINTENANCE_ISSUES_QUERY = `
   query MaintenanceIssues($status: String) {
     maintenanceIssues(status: $status) {
-      id roomId roomNumber roomType reason status blockedFrom blockedTo createdAt reportedBy resolvedAt
+      id
+      hotelId
+      roomId
+      roomNumber
+      roomType
+      issueType
+      priority
+      reason
+      description
+      status
+      blockedFrom
+      blockedTo
+      createdAt
+      reportedBy
+      resolvedAt
+      slaDeadline
     }
   }
 `;

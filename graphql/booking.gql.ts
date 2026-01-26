@@ -4,6 +4,8 @@ export const BOOKINGS_QUERY = `
     bookings(page: $page, pageSize: $pageSize, search: $search, status: $status) {
       id
       bookingNumber
+      hotelId
+      guestId
       guestName
       roomType
       roomNumber
@@ -12,6 +14,17 @@ export const BOOKINGS_QUERY = `
       status
       paymentStatus
       totalAmount
+      paidAmount
+      outstandingAmount
+      finalAmount
+      gstAmount
+      source
+      sourceId
+      arrivalTime
+      departureTime
+      cancellationPolicy
+      noShowPolicy
+      assignedAt
       createdAt
     }
   }

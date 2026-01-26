@@ -25,10 +25,17 @@ export const ReportsExportPage: React.FC = () => {
     return <div className="text-sm text-slate-500">Loading reports...</div>;
   }
 
-  const categories = ['ALL', ...Array.from(new Set(catalog?.map((r: any) => r.category) || []))];
+  const categorySet = new Set<string>();
+  catalog?.forEach((r: any) => {
+    const cat = r.category || r.type;
+    if (cat && typeof cat === 'string') {
+      categorySet.add(cat);
+    }
+  });
+  const categories: string[] = ['ALL', ...Array.from(categorySet)];
   const filteredCatalog = selectedCategory === 'ALL' 
     ? catalog 
-    : catalog?.filter((r: any) => r.category === selectedCategory);
+    : catalog?.filter((r: any) => (r.category || r.type) === selectedCategory);
 
   return (
     <div className="space-y-6">
@@ -62,7 +69,7 @@ export const ReportsExportPage: React.FC = () => {
                   <FileText className="text-indigo-600" size={24} />
                   <div>
                     <h3 className="font-bold text-slate-900">{report.name}</h3>
-                    <p className="text-xs text-slate-500">{report.category}</p>
+                    <p className="text-xs text-slate-500">{report.category || report.type}</p>
                   </div>
                 </div>
               </div>
@@ -71,10 +78,10 @@ export const ReportsExportPage: React.FC = () => {
 
               <div className="space-y-2 mb-4">
                 <div className="text-xs text-slate-500">
-                  <span className="font-semibold">Formats:</span> {report.outputFormats.join(', ')}
+                  <span className="font-semibold">Formats:</span> {report.outputFormats ? report.outputFormats.join(', ') : (report.format || 'N/A')}
                 </div>
                 <div className="text-xs text-slate-500">
-                  <span className="font-semibold">Schedule:</span> {report.scheduleSupported ? 'Supported' : 'Manual Only'}
+                  <span className="font-semibold">Schedule:</span> {report.scheduleSupported ? 'Supported' : (report.schedule ? report.schedule : 'Manual Only')}
                 </div>
               </div>
 
@@ -99,9 +106,11 @@ export const ReportsExportPage: React.FC = () => {
                   <div className="text-xs text-slate-500 mt-1">
                     {sched.frequency} at {sched.schedule} | Format: {sched.format}
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    Recipients: {sched.recipients.join(', ')}
-                  </div>
+                  {sched.recipients && sched.recipients.length > 0 && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Recipients: {sched.recipients.join(', ')}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className={`text-xs font-bold ${sched.isActive ? 'text-green-600' : 'text-slate-400'}`}>

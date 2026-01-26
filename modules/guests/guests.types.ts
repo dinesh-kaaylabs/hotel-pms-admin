@@ -31,7 +31,7 @@ export interface GuestStay {
   checkOutDate: string;
   roomNumber: string;
   totalSpent: number;
-  // Legacy fields for backward compatibility
+  // Enriched fields from bookings
   bookingId?: string;
   bookingNumber?: string;
   roomType?: string;

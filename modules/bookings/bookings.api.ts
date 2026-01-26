@@ -32,7 +32,7 @@ export const useBookingDetails = (id: string | null) => {
       const data = await graphqlRequest<{ booking: Booking }>(`
         query GetBooking($id: ID!) {
           booking(id: $id) {
-            id bookingNumber guestName roomType roomNumber checkInDate checkOutDate status paymentStatus totalAmount createdAt
+            id bookingNumber hotelId guestId guestName roomType roomNumber checkInDate checkOutDate status paymentStatus totalAmount paidAmount outstandingAmount finalAmount gstAmount source sourceId arrivalTime departureTime cancellationPolicy noShowPolicy assignedAt createdAt
           }
         }
       `, { id });

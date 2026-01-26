@@ -94,11 +94,28 @@ export const BookingsTable: React.FC<TableProps> = ({
             </div>
 
             <div className="w-[15%]">
-              <BookingStatusBadge status={booking.status} />
+              <div className="flex flex-col gap-1">
+                <BookingStatusBadge status={booking.status} />
+                {booking.paymentStatus && (
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                    booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
+                    booking.paymentStatus === 'PARTIALLY_PAID' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-rose-100 text-rose-700'
+                  }`}>
+                    {booking.paymentStatus}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="w-[13%] text-sm font-black text-slate-900 text-right px-2">
-              {format(booking.totalAmount)}
+            <div className="w-[13%] text-right px-2">
+              <div className="text-sm font-black text-slate-900">{format(booking.totalAmount)}</div>
+              {booking.source && (
+                <div className="text-[9px] text-slate-400 font-medium mt-0.5">{booking.source}</div>
+              )}
+              {booking.outstandingAmount !== undefined && booking.outstandingAmount > 0 && (
+                <div className="text-[9px] text-rose-600 font-bold mt-0.5">Due: ₹{booking.outstandingAmount.toLocaleString()}</div>
+              )}
             </div>
 
             <div className="w-[5%] text-right opacity-0 group-hover:opacity-100 transition-opacity">

@@ -33,23 +33,25 @@ export const useGuestProfile = (id: string | undefined) => {
   });
 };
 
-export const useGuestStays = () => {
+export const useGuestStays = (guestId?: string) => {
   return useQuery<GuestStay[]>({
-    queryKey: ['guests', 'stays'],
+    queryKey: ['guests', 'stays', guestId],
     queryFn: async () => {
-      const data = await graphqlRequest<{ guestStays: GuestStay[] }>(GUEST_STAYS_QUERY);
+      const data = await graphqlRequest<{ guestStays: GuestStay[] }>(GUEST_STAYS_QUERY, { guestId });
       return data.guestStays;
     },
+    enabled: true, // Always enabled, filtering happens server-side
   });
 };
 
-export const useGuestNotes = () => {
+export const useGuestNotes = (guestId?: string) => {
   return useQuery<GuestNote[]>({
-    queryKey: ['guests', 'notes'],
+    queryKey: ['guests', 'notes', guestId],
     queryFn: async () => {
-      const data = await graphqlRequest<{ guestNotes: GuestNote[] }>(GUEST_NOTES_QUERY);
+      const data = await graphqlRequest<{ guestNotes: GuestNote[] }>(GUEST_NOTES_QUERY, { guestId });
       return data.guestNotes;
     },
+    enabled: true, // Always enabled, filtering happens server-side
   });
 };
 

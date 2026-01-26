@@ -42,13 +42,13 @@ export const GuestsTable: React.FC<Props> = ({ data }) => {
                 <p className="text-[10px] text-slate-400">{guest.email || 'No email provided'}</p>
               </td>
               <td className="px-6 py-4 text-center">
-                <span className="text-xs font-black bg-slate-100 px-2 py-0.5 rounded-full">{guest.totalStays}</span>
+                <span className="text-xs font-black bg-slate-100 px-2 py-0.5 rounded-full">{guest.totalStays || 0}</span>
               </td>
               <td className="px-6 py-4 text-right">
-                <span className="text-sm font-black text-slate-900">{guest.currency} {guest.lifetimeValue.toLocaleString()}</span>
+                <span className="text-sm font-black text-slate-900">{guest.currency || 'INR'} {(guest.lifetimeValue || 0).toLocaleString()}</span>
               </td>
               <td className="px-6 py-4">
-                <GuestBadges tags={guest.tags} />
+                <GuestBadges tags={guest.tags || []} />
               </td>
               <td className="px-6 py-4 text-right">
                 <Link to={`/guests/${guest.id}`} className="p-2 text-slate-300 hover:text-indigo-600 transition-all flex justify-end">
