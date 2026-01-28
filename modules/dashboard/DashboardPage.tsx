@@ -44,6 +44,8 @@ export const DashboardPage: React.FC = () => {
   const { data: recentBookingsData, isLoading: isBookingsLoading } = useBookings({ page: 1, pageSize: 5 });
   const { data: roomInventory, isLoading: isInventoryLoading } = useRoomInventorySummary(activeHotelId);
 
+  console.log('summary', summary);
+
   const [aiPulse, setAiPulse] = useState<string>('');
 
   const generateAIPulseMutation = useMutation({
@@ -66,10 +68,10 @@ export const DashboardPage: React.FC = () => {
     if (!summary) return;
     generateAIPulseMutation.mutate({
       totalRevenue: summary.totalRevenue,
-      occupancyRate: summary.occupancyRate,
+      occupancyRate: summary.averageOccupancy,
       adr: summary.adr,
     });
-  }, [summary, generateAIPulseMutation]);
+  }, [summary]);
 
   useEffect(() => {
     if (summary) generateAIPulse();
@@ -142,7 +144,7 @@ export const DashboardPage: React.FC = () => {
           />
           <StatCard 
             label="Occupancy Rate" 
-            value={isSummaryLoading ? '...' : `${summary?.occupancyRate}%`} 
+            value={isSummaryLoading ? '...' : `${summary?.averageOccupancy}%`} 
             trend={{ value: 4.2, isUp: true }} 
             icon={BedDouble} 
             color="emerald" 

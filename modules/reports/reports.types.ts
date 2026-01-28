@@ -2,7 +2,7 @@
 export interface ReportSummary {
   totalRevenue: number;
   totalBookings: number;
-  occupancyRate: number; // Percentage 0-100
+  averageOccupancy: number; // Percentage 0-100
   adr: number; // Average Daily Rate
 }
 
